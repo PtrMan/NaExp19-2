@@ -383,23 +383,6 @@ Sentence[] inferBinaryBinary(Binary a, Binary b) {
 }
 
 void inferBinaryBinarySingleSide(Binary a, Binary b, Sentence[] resultSentences) {
-	/* hand crafted code
-	// A =/> B   B =/> C |- A =/> C
-	if (a.copula == "=/>" && b.copula == "=/>" && isSame(a.predicate, b.subject) ) {
-		// TODO< check for no overlap! >
-		if (true) {
-			Binary conclusionTerm = new Binary("=/>", a.subject, b.predicate);
-
-			// TODO< build and append conclusion sentence >
-			resultSentences ~= new Sentence(conclusionTerm, new TruthValue());
-		}
-	}
-	 */
-
-
-
-
-
 
 }
 
