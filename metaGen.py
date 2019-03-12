@@ -14,62 +14,6 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     (premiseBSubj, premiseBCopula, premiseBPred) = premiseB
     (conclusionSubj, conclusionCopula, conclusionPred) = conclusion
 
-    
-    """ commented because outdated
-    # returns the path of a premise name
-    def retPathOfPremiseName(name):
-        if   name == premiseASubj: return ["a.subject"]
-        elif name == premiseAPred: return ["a.predicate"]
-        elif name == premiseBSubj: return ["b.subject"]
-        elif name == premiseBPred: return ["b.predicate"]
-
-        # we need to walk a more complex path to get the name
-
-        if isinstance(premiseASubj, tuple):
-            if name == premiseASubj[1]: return ["a.subject", 0]
-            if name == premiseASubj[2]: return ["a.subject", 1]
-        if isinstance(premiseAPred, tuple):
-            if name == premiseAPred[1]: return ["a.predicate", 0]
-            if name == premiseAPred[2]: return ["a.predicate", 1]
-
-        if isinstance(premiseBSubj, tuple):
-            if name == premiseBSubj[1]: return ["b.subject", 0]
-            if name == premiseBSubj[2]: return ["b.subject", 1]
-        if isinstance(premiseBPred, tuple):
-            if name == premiseBPred[1]: return ["b.predicate", 0]
-            if name == premiseBPred[2]: return ["b.predicate", 1]
-
-        # couldn't find a path to the variable in question
-        raise Exception("unhandled name "+str(name))
-
-
-    def retVarNameSimple(name):
-        path = retPathOfPremiseName(name)
-
-        # build program to traverse path
-        if len(path) == 1:
-            return path[0]
-
-        # TODO< traverse more complex path >
-        return str(path)
-
-    def retVarName(name):
-        resultSimple = retVarNameSimple(name)
-        if resultSimple != None:
-            return resultSimple
-
-        # build program to build conclusion terms
-
-        print name
-
-        (nameCopula, name0, name1) = name # structure of conclusion term is encoded as tuple
-
-        varNameName0 = retVarNameSimple(name0)
-        varNameName1 = retVarNameSimple(name1)
-        
-        return "new Binary(\"" + nameCopula + "\"," + varNameName0 + "," + varNameName1 + ")"
-    """
-
     def escape(str_):
         return str_.replace("\\", "\\\\")
 
@@ -83,9 +27,6 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
                 asStringList.append('"' + str(iPathElement) + '"')
         return "[" + ",".join(asStringList) + "]"
 
-    #conclusionSubjPath = retPathOfPremiseName(conclusionSubj) # coommented because it may be BS
-    #conclusionPredPath = retPathOfPremiseName(conclusionPred)
-    
 
     # need to figure out which terms are the same on both sides
     #
@@ -134,15 +75,6 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
             samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate", 1]) )
 
 
-
-
-    # commented because outdated
-    #if   premiseASubj == premiseBSubj: samePremiseTerms = ("a.subject", "b.subject")
-    #elif premiseASubj == premiseBPred: samePremiseTerms = ("a.subject", "b.predicate")
-    #elif premiseAPred == premiseBSubj: samePremiseTerms = ("a.predicate", "b.subject")
-    #elif premiseAPred == premiseBPred: samePremiseTerms = ("a.predicate", "b.predicate")
-
-
     
     pathsPremiseB = {}
     if not isinstance(premiseBSubj, tuple):
@@ -156,24 +88,6 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     else:
         pathsPremiseB[premiseBPred[1]] = ["b.predicate", 0]
         pathsPremiseB[premiseBPred[2]] = ["b.predicate", 1]
-
-    """
-
-    # work out paths of conclusions
-    conclusionSubjPath = None
-    if conclusionSubj in pathsPremiseA:
-        conclusionSubjPath = pathsPremiseA[conclusionSubj]
-    elif conclusionSubj in pathsPremiseB:
-        conclusionSubjPath = pathsPremiseB[conclusionSubj]
-
-    conclusionPredPath = None
-    if conclusionPred in pathsPremiseA:
-        conclusionPredPath = pathsPremiseA[conclusionPred]
-    elif conclusionPred in pathsPremiseB:
-        conclusionPredPath = pathsPremiseB[conclusionPred]
-    """
-
-
 
 
     def retCode(obj):
@@ -282,23 +196,6 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     staticFunctionCounter+=1
 
-    return # return because we need to build and fill the trie
-
-
-
-    """ commented because completely outdated
-    print "if (true"
-    print "   && a.copula == \""+escape(premiseACopula)+"\" && b.copula == \""+escape(premiseBCopula)+"\" && isSame("+samePremiseTerms[0]+", "+samePremiseTerms[1]+")"
-    #commented because not required    print "   && !Stamp.checkOverlap(a.stamp, b.stamp)"
-    print ") {"
-    print "   Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", "+conclusionSubjVar+", "+conclusionPredVar+");"
-
-    print "   // TODO< build and append conclusion sentence >"
-    print "   resultSentences ~= new Sentence(conclusionTerm, new TruthValue());"
-    print "}"
-    print ""
-    print ""
-    """
     
 
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
