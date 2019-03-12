@@ -148,7 +148,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     global staticFunctionCounter
     global derivationFunctionsSrc
 
-    print ""
+    
     print "{"
     print "    TrieElement te0 = new TrieElement(TrieElement.EnumType.CHECKCOPULA);"
     print "    te0.side = EnumSide.LEFT;"
@@ -202,13 +202,16 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 CopulaTypes = [
     ["-->","<->",[["&"],"|",["-","~"]]], #
     ["==>","<=>",[["&&"],"||",None]], #
-    ["=/>(t)","</>(t)",[["&/(t)","&|"],"||",None]],
+    #["=/>(t)","</>(t)",[["&/(t)","&|"],"||",None]],
     ["=|>","<|>",[["&/","&|"],"||",None]], #
-    ["=\>(t)",None ,[["&/","&|"],"||",None]] #
+    #["=\>(t)",None ,[["&/","&|"],"||",None]] #
 ]
 
 # generate code for already implemented conversions?
-genCode = True
+genCodeComplex = False
+
+print "// AUTOGEN: initializes and fills tries"
+print "void initTrie(TrieElement[] rootTries) {"
 
 for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     (bFOL, OmitForHOL, ival, copAsymZ) = (copAsym == "-->", lambda str: str if bFOL else "", lambda str,t: str.replace("t",t), copAsym.replace("t","z"))
@@ -216,18 +219,18 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     # TODO< implement inference generation function to generate code which accepts only one argument >
     #print "(A "+copAsym+" B)\t\t\t\t\t|-\t(B "+ival(copAsym,"-t")+" A)\t\t(Truth:Conversion)"
     
-    if genCode:
+    if genCodeComplex:
         #print "(A "+copAsym+" B),\t(B "+copAsymZ+" C)\t\t\t|-\t(A "+ival(copAsym,"t+z")+" C)\t\t(Truth:deduction"+OmitForHOL(", Desire:Strong")+")"
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"), ("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     
     copAsymHasTimeOffset = "/" in copAsym or "\\" in copAsym
     IntervalProjection = "WithIntervalProjection(t,z)" if copAsymHasTimeOffset else ""
     
-    if genCode: # block
+    if True: # block
         #print "// (A "+copAsym+" B),\t(C "+copAsymZ+" B)\t\t\t|-\t(A "+copAsym+" C)\t\t(Truth:induction"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
         gen(("A", copAsym, "B"),   ("C", copAsymZ, "B"),    ("A", copAsym, "C"),   ("induction", IntervalProjection), OmitForHOL("weak"))
         
-    if genCode: # block
+    if True: # block
         #print "(A "+copAsym+" B),\t(A "+copAsymZ+" C)\t\t\t|-\t(B "+copAsym+" C)\t\t(Truth:abduction"+IntervalProjection+OmitForHOL(", Desire:Strong")+")"
         gen(("A", copAsym, "B"),   ("A", copAsymZ, "C"),  ("B", copAsym, "C"), ("abduction", IntervalProjection), OmitForHOL("strong"))
 
@@ -235,23 +238,23 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     if copSym != None:
         copSymZ = copSym.replace("t","z")
         
-        if genCode:
+        if genCodeComplex:
             #print "(A "+copSym+" B),\t(B "+copSymZ+" C)\t\t\t|-\t(A "+ival(copSym,"t+z")+" C)\t\t(Truth:resemblance"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copSym,"B"),("B",copSymZ,"C"),  ("A",ival(copSym,"t+z"),"C"),  ("resemblance", ""), OmitForHOL("strong"))
 
-        if genCode:
+        if genCodeComplex:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copAsym+" C)\t\t(Truth:analogy"+IntervalProjection+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"B"),  ("A",copAsym,"C"),   ("analogy", IntervalProjection), OmitForHOL("strong"))
 
-        if genCode:
+        if genCodeComplex:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" A)\t\t\t|-\t(C "+ival(copSym,"t+z")+" B)\t\t(Truth:analogy"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"A"),   ("C",ival(copSym,"t+z"),"B"),  ("analogy", ""), OmitForHOL("strong"))
         
-        if genCode:
+        if genCodeComplex:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copSym+" C)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("C", copSymZ, "B"),   ("A",copSym,"C"), ("comparison", IntervalProjection), OmitForHOL("weak"))
 
-        if genCode:
+        if genCodeComplex:
             #print "(A "+copAsym+" B),\t(A "+copSymZ+" C)\t\t\t|-\t(C "+copSym+" B)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("A",copSymZ,"C"), ("C",copSym,"B"), ("comparison", IntervalProjection), OmitForHOL("weak"))
     
@@ -283,7 +286,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
 
         copZ = cop.replace("t","z")
         if MinusCops != None:
-            if genCode:
+            if genCodeComplex:
                 gen(("A",cop,"B"),("C",copZ,"B"),   ((MinusCops[1],"A","C"),cop,"B"),    ("difference", ""), "")
                 gen(("A",cop,"B"),("A",copZ,"C"),   ("B",cop,(MinusCops[0],"A","C")),    ("difference", ""), "")
                 gen(("S",cop,"M"),((MinusCops[1],"S","P"),copZ,"B"),   ("P",cop,"M"),   ("decomposePNP", ""), "")
@@ -307,18 +310,22 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
                         # commented because it only consumes a single premise on the left side! - we haven't implemented this case
                         #print "A,\t\t((" + junc + " A C) "+copZ+" B)\t\t|-\t(C "+ copZ + " B)\t\t(Truth:Deduction"+(tParam.replace("-","+") if copAsymHasTimeOffset else "")+")"
 
-                    if genCode:
+                    if genCodeComplex:
                         #print "(A "+cop+" B),\t(C "+copZ+" B)\t\t\t|-\t((" + junc + " A C) "+ cop + " B) \t" + TruthSet1 + IntervalProjection+")"
                         gen(("A",cop,"B"),("C",copZ,"B"),   ((junc,"A", "C"), cop, "B"),  (TruthSet1, IntervalProjection), "")
 
-                    if genCode:
+                    if genCodeComplex:
                         #print "(A "+cop+" B),\t(A "+copZ+" C)\t\t\t|-\t(A "+ cop + " (" + junc + " B C)) \t"  + TruthSet2 + IntervalProjection+")"
                         gen(("A",cop,"B"),("A",copZ,"C"),   ("A",cop,(junc,"B", "C")),  (TruthSet2, IntervalProjection), "")
 
-                    if genCode:
+                    if genCodeComplex:
                         gen(("S",cop,"M"),((junc,"S", "L"),copZ,"M"),    ("L",cop,"M"),   (TruthDecomp1, IntervalProjection), "")
                     
-                    if genCode:
+                    if genCodeComplex:
                         gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     ("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
+
+print "}"
+print ""
+print ""
 
 print derivationFunctionsSrc
