@@ -1,12 +1,24 @@
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
 
+// TODO< implement basic reasoning loop >
 
 
 // LATER TODO< variable unifier >
 // LATER TODO< sets >
 
 // LATER TODO< decision making :( >
+
+
+void main() {	
+	Reasoner reasoner = new Reasoner();
+
+	// TODO< implement reasoning loop >
+
+}
+
+
+
 
 public enum EnumSide {
 	LEFT,
@@ -27,7 +39,7 @@ class TrieElement {
 
 	// function which builds the result or returns null on failure
 	// trie element is passed to pass some additional data to it
-	public Term function(Sentence leftSentence, Sentence rightSentence, Sentence[] resultSentences, TrieElement trieElement) fp;
+	public void function(Sentence leftSentence, Sentence rightSentence, Sentence[] resultSentences, TrieElement trieElement) fp;
 
 	public TrieElement[] children; // children are traversed if the check was true
 
@@ -72,7 +84,7 @@ TrieElement buildTestTrie() {
 
 // interprets a trie
 // returns null if it fails - used to propagate control flow
-Term interpretTrieRec(TrieElement trieElement, Term leftSentence, Term rightSentence, Sentence[] resultSentences) {
+Term interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence rightSentence, Sentence[] resultSentences) {
 	Term left = leftSentence.term;
 	Term right = rightSentence.term;
 
@@ -135,10 +147,10 @@ Term interpretTrieRec(TrieElement trieElement, Term leftSentence, Term rightSent
 		}
 	}
 	else if(trieElement.type == TrieElement.EnumType.EXEC) {
-		Term execResult = trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
-		if (execResult !is null) {
+		/*commented because it doesn't return anything   Term execResult = */trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
+		/*if (execResult !is null) {
 			return execResult;
-		}
+		} commented because it doesn't return anything*/
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
 		Term leftElement = walk(trieElement.pathLeft);
@@ -242,6 +254,11 @@ class TruthValue {
 	public float freq;
 	public double conf;
 
+	public this(float freq, double conf) {
+		this.freq = freq;
+		this.conf = conf;
+	}
+
 	public static TruthValue calc(string function_, TruthValue a, TruthValue b) {
 		double f1 = a.freq;
 		double c1 = a.conf;
@@ -344,6 +361,16 @@ class Memory {
 
 		return resultSentences;
 	}
+}
+
+class TrieDeriver {
+	// tries which are the roots and are iterated independently
+	TrieElement[] rootTries;
+}
+
+class Reasoner {
+	Memory mem = new Memory();
+	TrieDeriver deriver = new TrieDeriver();
 }
 
 // inference of binary and binary

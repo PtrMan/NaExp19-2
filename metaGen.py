@@ -102,9 +102,15 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
                 raise Exception("couldn't find name " + name)
 
             if len(resList) == 1:
-                return resList[0]
+                if resList[0][0] == 'a' or resList[0][0] == 'b':
+                    code = "(" + "cast(Binary)"+resList[0][0] + ")" + resList[0][1:]
+
+                return code
             elif len(resList) == 2:
-                code = "(" + "cast(Binary)"+resList[0] + ")"
+                code = None
+                if resList[0][0] == 'a' or resList[0][0] == 'b':
+                    code = "(" + "cast(Binary)"+resList[0][0] + ")" + resList[0][1:]
+
 
                 if resList[1] == 0:
                     code += ".subject"
@@ -168,26 +174,26 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    te"+str(teCounter)+".pathRight = "+ convertPathToDSrc( iSamePremiseTerms[1] ) +";" # print python list to D list
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
         print "    "
-        teCounter+=1
-
-    print "    TrieElement teX = new TrieElement();"
-    print "    teX.type = TrieElement.EnumType.EXEC;"
+    
+    print "    TrieElement teX = new TrieElement(TrieElement.EnumType.EXEC);"
     print "    teX.fp = &derive"+str(staticFunctionCounter)+";"
     print "    te"+str(teCounter)+".children ~= teX;"
     print "    "
     print "    rootTries ~= te0;"
     print "}"
 
+    teCounter+=1
+
 
 
     derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(Sentence aSentence, Sentence bSentence, Sentence[] resultSentences, TrieElement trieElement) {\n"
-    derivationFunctionsSrc+= "   Term a = a.term;\n"
-    derivationFunctionsSrc+= "   Term b = b.term;\n"
+    derivationFunctionsSrc+= "   Term a = aSentence.term;\n"
+    derivationFunctionsSrc+= "   Term b = bSentence.term;\n"
 
     derivationFunctionsSrc+= "   Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", "+conclusionSubjCode+", "+conclusionPredCode+");\n"
 
     derivationFunctionsSrc+= "   // TODO< build stamp >\n"
-    derivationFunctionsSrc+= "   TruthValue tv = TruthValue.calc(\""+truth+"\", a.truth, b.truth);\n"
+    derivationFunctionsSrc+= "   TruthValue tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
     derivationFunctionsSrc+= "   resultSentences ~= new Sentence(conclusionTerm, tv);\n"
     derivationFunctionsSrc+= "}\n"
     derivationFunctionsSrc+= "\n"
