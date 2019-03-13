@@ -1,7 +1,9 @@
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
 
-// TODO< implement conceptualize >
+
+// TODO< add table for beliefs of concept! >
+// call it ExpPriorityTable because it takes only the expectation into account for ranking >
 
 // TODO< implement basic reasoning loop >
 
@@ -30,11 +32,14 @@ void main() {
 		Term term = new Binary("-->", new AtomicTerm("a"), new AtomicTerm("b"));
 		auto tv = new TruthValue(1.0f, 0.9f);
 		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		testTask.sentence = new Sentence(term, tv, stamp);
+		auto sentence = new Sentence(term, tv, stamp);
+		testTask.sentence = sentence;
+
+		reasoner.mem.conceptualize(sentence);
 	}
 	
-	Concept testConcept = new Concept();
-	testConcept.name = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+	Term testConceptName = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+	Concept testConcept = new Concept(testConceptName);
 
 	{
 		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
@@ -42,6 +47,8 @@ void main() {
 		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
 		Sentence beliefSentence = new Sentence(term, tv, stamp);
 		testConcept.beliefs ~= beliefSentence;
+
+		reasoner.mem.conceptualize(beliefSentence);
 	}
 
 	writeln("test derivation");
@@ -50,6 +57,8 @@ void main() {
 	Sentence[] derivedSentences = reasoner.mem.infer(testTask, testConcept, reasoner.deriver);
 
 	writeln("derived sentences#=", derivedSentences.length);
+
+	// TODO< conceptualize derived sentences ! >
 }
 
 
@@ -61,7 +70,7 @@ public enum EnumSide {
 }
 
 class TrieElement {
-	public this(EnumType type) {
+	public final this(EnumType type) {
 		this.type = type;
 	}
 
@@ -224,7 +233,7 @@ interface SetTerm : Term, Indexable {
 
 
 class AtomicTerm : Term {
-	public this(string name) {
+	public final this(string name) {
 		this.name = name;
 
         cachedHash = 17;
@@ -250,7 +259,7 @@ interface BinaryTerm : Term {
 }
 
 class Binary : BinaryTerm {
-	public this(string copula, Term subject, Term predicate) {
+	public final this(string copula, Term subject, Term predicate) {
 		this.copula = copula;
 		this.subject = subject;
 		this.predicate = predicate;
@@ -267,11 +276,12 @@ class Binary : BinaryTerm {
 	public Term predicate;
 }
 
+// TODO< convert to struct >
 class TruthValue {
 	public float freq;
 	public double conf;
 
-	public this(float freq, double conf) {
+	public final this(float freq, double conf) {
 		this.freq = freq;
 		this.conf = conf;
 	}
@@ -399,7 +409,7 @@ class Sentence {
 	Term term;
 	Stamp stamp;
 
-	public this(Term term, TruthValue truth, Stamp stamp) {
+	public final this(Term term, TruthValue truth, Stamp stamp) {
 		this.term = term;
 		this.truth = truth;
 		this.stamp = stamp;
@@ -410,6 +420,10 @@ class Concept {
 	public Term name;
 
 	public Sentence[] beliefs;
+
+	public final this(Term name) {
+		this.name = name;
+	}
 }
 
 class Task {
@@ -427,13 +441,17 @@ bool isSame(Term a, Term b) {
 }
 
 class Memory {
-	Concept[] concepts;
-	Xorshift rng = Xorshift(1);
+	public ConceptTable concepts;
+	public Xorshift rng = Xorshift(1);
 
 	public shared long stampCounter = 0; // counter used for the creation of stamps
 
 	// commented because not used
 	//Task[] activeTasks; // TODO< refine with some table which takes the priority and exp() into account
+
+	public final this() {
+		concepts = new ConceptTable();
+	}
 
 	public final Sentence[] infer(Task t, Concept c, TrieDeriver deriver) {
 		Sentence[] resultSentences;
@@ -454,6 +472,42 @@ class Memory {
 		deriver.derive(t.sentence, selectedBelief, resultSentences);
 		return resultSentences;
 	
+	}
+
+	// creates concepts if necessary and puts the belief into all relevant concepts 
+	public final void conceptualize(Sentence belief) {
+		// conceptualizes by selected term recursivly
+		void conceptualizeByTermRec(Term term) {
+			if(!concepts.hasConceptByName(term)) {
+				// create concept and insert into table
+
+				Concept createdConcept = new Concept(term);
+				concepts.insertConcept(createdConcept);
+			}
+
+			{ // add belief
+				Concept concept = concepts.retConceptByName(term);
+				concept.beliefs ~= belief;
+			}
+
+			{ // call recursivly
+				if (cast(BinaryTerm)term !is null) {
+					Binary binary = cast(Binary)term; // TODO< cast to binaryTerm and use methods to access children >
+
+					conceptualizeByTermRec(binary.subject);
+					conceptualizeByTermRec(binary.predicate);
+				}
+				else if (cast(AtomicTerm)term !is null) {
+					// we can't recurse into atomics
+				}
+				else {
+					// TODO< call function which throws an exception in debug mode >
+					throw new Exception("conceptualize(): unhandled case!");
+				}
+			}
+		}
+
+		conceptualizeByTermRec(belief.term);
 	}
 }
 
@@ -484,5 +538,61 @@ class Reasoner {
 	}
 }
 
-// TODO< inference cycle >
+//////////////////////////
+// memory management
 
+
+
+// TODO< put under AIKR with a strategy similar to ALANN >
+
+// a table is like a bag in Open-NARS, just with different policies for prioritization and attention
+class ConceptTable {
+	private Concept[] concepts;
+
+	// concepts by hashes of names
+	private Concept[][long] conceptsByNameHash;
+
+	public final bool hasConceptByName(Term name) {
+		long hashOfName = name.retHash();
+
+		if (!(hashOfName in conceptsByNameHash)) {
+			return false;
+		}
+
+		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
+		foreach(Concept iConcept; listOfPotentialConcepts) {
+			if (isSame(iConcept.name, name)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public final Concept retConceptByName(Term name) {
+		// TODO< must be ensure >
+		assert(hasConceptByName(name));
+
+		long hashOfName = name.retHash();
+		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
+		foreach(Concept iConcept; listOfPotentialConcepts) {
+			if (isSame(iConcept.name, name)) {
+				return iConcept;
+			}
+		}
+
+		return null; // should never happen		
+	}
+
+	// does not check if the concept already exists!
+	public final void insertConcept(Concept concept) {
+		concepts ~= concept;
+
+		if (concept.name.retHash() in conceptsByNameHash) {
+			conceptsByNameHash[concept.name.retHash()] ~= concept;
+		}
+		else {
+			conceptsByNameHash[concept.name.retHash()] = [concept];
+		}
+	}
+}

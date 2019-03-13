@@ -1,6 +1,8 @@
 
 # Non-Axiomatic Logic generation
 
+# TODO< implement sets >
+
 staticFunctionCounter = 0
 
 # used to accumulate all static functions for the derivation
