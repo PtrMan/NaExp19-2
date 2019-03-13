@@ -1,9 +1,11 @@
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
 
+// TODO< implement conceptualize >
+
 // TODO< implement basic reasoning loop >
 
-// TODO< zip stamp like the code done in the python prototype >
+// TODO< lock stamp counter and increment >
 
 // TODO< fall back to normal comparision if all hashes succeed >
 
@@ -14,6 +16,7 @@
 
 import std.random;
 import std.stdio;
+import std.algorithm.comparison;
 
 void main() {	
 	Reasoner reasoner = new Reasoner();
@@ -26,7 +29,8 @@ void main() {
 	{
 		Term term = new Binary("-->", new AtomicTerm("a"), new AtomicTerm("b"));
 		auto tv = new TruthValue(1.0f, 0.9f);
-		testTask.sentence = new Sentence(term, tv);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		testTask.sentence = new Sentence(term, tv, stamp);
 	}
 	
 	Concept testConcept = new Concept();
@@ -35,9 +39,12 @@ void main() {
 	{
 		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
 		auto tv = new TruthValue(1.0f, 0.9f);
-		Sentence beliefSentence = new Sentence(term, tv);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
 		testConcept.beliefs ~= beliefSentence;
 	}
+
+	writeln("test derivation");
 
 	// do test inference and look at the result (s)
 	Sentence[] derivedSentences = reasoner.mem.infer(testTask, testConcept, reasoner.deriver);
@@ -86,6 +93,8 @@ class TrieElement {
 // returns null if it fails - used to propagate control flow
 bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences) {
 	bool debugVerbose = false;
+
+	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
 	Term left = leftSentence.term;
 	Term right = rightSentence.term;
@@ -339,11 +348,16 @@ class TruthValue {
 	}
 }
 
-struct Stamp {
+class Stamp {
+	// TODO OPTIMIZATION< allocate non-GC'ed memory >
 	public long[] trail;
+
+	public this(long[] trail) {
+		this.trail = trail;
+	}
 	
-	public static bool checkOverlap(ref Stamp a, ref Stamp b) {
-		// TODO< optimize >
+	public static bool checkOverlap(Stamp a, Stamp b) {
+		// TODO OPTIMIZATION< optimize for runtime >
 
 		bool[long] inA;
 		foreach(long ia; a.trail) {
@@ -357,17 +371,38 @@ struct Stamp {
 		}
 		return false;
 	}
+
+	public static Stamp merge(Stamp a, Stamp b) {
+		long[] zipped = [];
+
+        int ia = 0, ib = 0;
+        foreach(ulong i; 0..min(a.trail.length, b.trail.length)) {
+        	zipped ~= ( (i % 2) == 0 ? a.trail[ia] : b.trail[ib] ); // append trail in lockstep
+
+        	if ((i % 2) == 0) { ia++; }
+            else {              ib++; }
+        }
+
+        // append remaining part of either stamp
+        zipped ~= a.trail[ia..$];
+        zipped ~= b.trail[ib..$];
+
+        // limit length
+        zipped = zipped[0..min(zipped.length, 100)]; // TODO< make parameter >
+
+        return new Stamp(zipped);
+	}
 }
 
 class Sentence {
 	TruthValue truth;
 	Term term;
-
 	Stamp stamp;
 
-	public this(Term term, TruthValue truth) {
+	public this(Term term, TruthValue truth, Stamp stamp) {
 		this.term = term;
 		this.truth = truth;
+		this.stamp = stamp;
 	}
 }
 
@@ -382,8 +417,11 @@ class Task {
 }
 
 bool isSame(Term a, Term b) {
-	return a.retHash() == b.retHash();
+	if (a == b) {
+		return true;
+	}
 
+	return a.retHash() == b.retHash();
 
 	// TODO< real compare >
 }
@@ -391,6 +429,8 @@ bool isSame(Term a, Term b) {
 class Memory {
 	Concept[] concepts;
 	Xorshift rng = Xorshift(1);
+
+	public shared long stampCounter = 0; // counter used for the creation of stamps
 
 	// commented because not used
 	//Task[] activeTasks; // TODO< refine with some table which takes the priority and exp() into account

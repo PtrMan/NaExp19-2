@@ -192,9 +192,9 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     derivationFunctionsSrc+= "   Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", "+conclusionSubjCode+", "+conclusionPredCode+");\n"
 
-    derivationFunctionsSrc+= "   // TODO< build stamp >\n"
+    derivationFunctionsSrc+= "   Stamp stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
     derivationFunctionsSrc+= "   TruthValue tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
-    derivationFunctionsSrc+= "   resultSentences ~= new Sentence(conclusionTerm, tv);\n"
+    derivationFunctionsSrc+= "   resultSentences ~= new Sentence(conclusionTerm, tv, stamp);\n"
     derivationFunctionsSrc+= "}\n"
     derivationFunctionsSrc+= "\n"
     derivationFunctionsSrc+= "\n"
