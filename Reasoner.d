@@ -3,18 +3,46 @@
 
 // TODO< implement basic reasoning loop >
 
+// TODO< zip stamp like the code done in the python prototype >
+
+// TODO< fall back to normal comparision if all hashes succeed >
 
 // LATER TODO< variable unifier >
 // LATER TODO< sets >
 
 // LATER TODO< decision making :( >
 
+import std.random;
+import std.stdio;
 
 void main() {	
 	Reasoner reasoner = new Reasoner();
+	reasoner.init();
 
 	// TODO< implement reasoning loop >
 
+	Task testTask = new Task();
+
+	{
+		Term term = new Binary("-->", new AtomicTerm("a"), new AtomicTerm("b"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		testTask.sentence = new Sentence(term, tv);
+	}
+	
+	Concept testConcept = new Concept();
+	testConcept.name = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+
+	{
+		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		Sentence beliefSentence = new Sentence(term, tv);
+		testConcept.beliefs ~= beliefSentence;
+	}
+
+	// do test inference and look at the result (s)
+	Sentence[] derivedSentences = reasoner.mem.infer(testTask, testConcept, reasoner.deriver);
+
+	writeln("derived sentences#=", derivedSentences.length);
 }
 
 
@@ -39,7 +67,7 @@ class TrieElement {
 
 	// function which builds the result or returns null on failure
 	// trie element is passed to pass some additional data to it
-	public void function(Sentence leftSentence, Sentence rightSentence, Sentence[] resultSentences, TrieElement trieElement) fp;
+	public void function(Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences, TrieElement trieElement) fp;
 
 	public TrieElement[] children; // children are traversed if the check was true
 
@@ -54,37 +82,11 @@ class TrieElement {
 	}
 }
 
-/* commented because outdated
-TrieElement buildTestTrie() {
-	TrieElement[] rootTries;
-
-	{
-		TrieElement te0 = new TrieElement();
-		te0.type = TrieElement.EnumType.CHECKCOPULA;
-		te0.side = EnumSide.LEFT;
-		te0.checkedString = "==>";
-
-		TrieElement te1 = new TrieElement();
-		te1.type = TrieElement.EnumType.CHECKCOPULA;
-		te1.side = EnumSide.RIGHT;
-		te1.checkedString = "==>";
-		te0.children ~= te1;
-
-		TrieElement teX = new TrieElement();
-		teX.type = TrieElement.EnumType.EXEC;
-		teX.fp = &infer0;
-		te1.children ~= teX;
-
-		rootTries ~= te0;
-	}
-
-	return rootTries[0];
-}
-*/
-
 // interprets a trie
 // returns null if it fails - used to propagate control flow
-Term interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence rightSentence, Sentence[] resultSentences) {
+bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences) {
+	bool debugVerbose = false;
+
 	Term left = leftSentence.term;
 	Term right = rightSentence.term;
 
@@ -127,13 +129,15 @@ Term interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence r
 
 
 	if (trieElement.type == TrieElement.EnumType.CHECKCOPULA) {
+		if(debugVerbose) writeln("interpretTrieRec checkcopula");
+
 		if (trieElement.side == EnumSide.LEFT) {
 			Binary b = cast(Binary)left;
 			if (b is null) {
 				throw new Exception("");
 			}
 			if (b.copula != trieElement.checkedString) {
-				return null; // propagate failure
+				return true; // propagate failure
 			}
 		}
 		else { // check right
@@ -142,34 +146,38 @@ Term interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence r
 				throw new Exception("");
 			}
 			if (b.copula != trieElement.checkedString) {
-				return null; // propagate failure
+				return true; // propagate failure
 			}
 		}
 	}
 	else if(trieElement.type == TrieElement.EnumType.EXEC) {
+		if(debugVerbose) writeln("interpretTrieRec exec");
+
 		/*commented because it doesn't return anything   Term execResult = */trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
 		/*if (execResult !is null) {
 			return execResult;
 		} commented because it doesn't return anything*/
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
+		if(debugVerbose) writeln("interpretTrieRec walkCompare");
+
 		Term leftElement = walk(trieElement.pathLeft);
 		Term rightElement = walk(trieElement.pathRight);
 
 		if (leftElement is null || rightElement is null || !isSame(leftElement, rightElement)) {
-			return null; // abort if walk failed or if the walked elements don't match up
+			return true; // abort if walk failed or if the walked elements don't match up
 		}
 	}
 
 	// we need to iterate children if we are here
 	foreach( TrieElement iChildren; trieElement.children) {
-		Term recursionResult = interpretTrieRec(iChildren, leftSentence, rightSentence, resultSentences);
-		if (recursionResult !is null) {
-			return recursionResult;
+		bool recursionResult = interpretTrieRec(iChildren, leftSentence, rightSentence, resultSentences);
+		if (recursionResult ) {
+			//return recursionResult;
 		}
 	}
 
-	return null; // propagate failure
+	return true;
 }
 
 
@@ -275,9 +283,35 @@ class TruthValue {
         	double c = and(c1, c2, or(f1, f2));
 			return new TruthValue(cast(float)f, c);
 		}
+		else if(function_ == "induction") {
+			return abduction(b, a, 1.0);
+		}
+		else if(function_ == "abduction") {
+			return abduction(a, b, 1.0);
+		}
+		else if(function_ == "deduction") {
+			double f = and(f1, f2);
+        	double c = and(c1, c2, f);
+			return new TruthValue(cast(float)f, c);
+		}
 		// TODO< implement other truth functions >
 
-		throw new Exception("not implemented!");
+		throw new Exception("Unimplemented truth function name=" ~ function_);
+	}
+
+	private static TruthValue abduction(TruthValue a, TruthValue b, double horizon) {
+		double f1 = a.freq;
+		double c1 = a.conf;
+		double f2 = b.freq;
+		double c2 = b.conf;
+
+		double w = and(f2, c1, c2);
+        double c = w2c(w, horizon);
+		return new TruthValue(cast(float)f1, c);
+	}
+
+	private static double w2c(double w, double horizon) {
+		return w / (w + horizon);
 	}
 
 	private static double or(double a, double b) {
@@ -323,7 +357,7 @@ class Sentence {
 	}
 }
 
-struct Concept {
+class Concept {
 	public Term name;
 
 	public Sentence[] beliefs;
@@ -342,48 +376,58 @@ bool isSame(Term a, Term b) {
 
 class Memory {
 	Concept[] concepts;
+	Xorshift rng = Xorshift(1);
 
-	public final Sentence[] infer(Task t, Concept c) {
+	// commented because not used
+	//Task[] activeTasks; // TODO< refine with some table which takes the priority and exp() into account
+
+	public final Sentence[] infer(Task t, Concept c, TrieDeriver deriver) {
 		Sentence[] resultSentences;
 
-		// TODO< pick random belief and try to do inference >
+		// pick random belief and try to do inference
 
-		if (cast(Binary)t.sentence.term && cast(Binary)c.beliefs[0]) {
-			Binary sentenceTerm = cast(Binary)t.sentence.term;
-			Binary conceptNameTerm = cast(Binary)c.beliefs[0].term;
-
-			if (Stamp.checkOverlap(t.sentence.stamp, c.beliefs[0].stamp)) {
-				return resultSentences;
-			}
-
-			return inferBinaryBinary(sentenceTerm, conceptNameTerm);
+		if (c.beliefs.length == 0) {
+			return resultSentences; // can't select a belief to do inference
 		}
 
+		long beliefIdx = uniform(0, c.beliefs.length, rng);
+		auto selectedBelief = c.beliefs[beliefIdx];
+
+		if (Stamp.checkOverlap(t.sentence.stamp, selectedBelief.stamp)) {
+			return resultSentences;
+		}
+
+		deriver.derive(t.sentence, selectedBelief, resultSentences);
 		return resultSentences;
+	
 	}
 }
 
 class TrieDeriver {
 	// tries which are the roots and are iterated independently
 	TrieElement[] rootTries;
+
+	final void init() {
+		rootTries = [];
+		initTrie(rootTries);
+		writeln("TrieDeriver: init with nTries=", rootTries.length);
+	}
+
+	final void derive(Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences) {
+		foreach(TrieElement iRootTries; rootTries) {
+			interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences);
+			interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences);
+		}
+	}
 }
 
 class Reasoner {
 	Memory mem = new Memory();
 	TrieDeriver deriver = new TrieDeriver();
-}
 
-// inference of binary and binary
-// TODO< autogenerate code >
-Sentence[] inferBinaryBinary(Binary a, Binary b) {
-	Sentence[] result;
-	inferBinaryBinarySingleSide(a, b, result);
-	inferBinaryBinarySingleSide(b, a, result);
-	return result;
-}
-
-void inferBinaryBinarySingleSide(Binary a, Binary b, Sentence[] resultSentences) {
-
+	final void init() {
+		deriver.init();
+	}
 }
 
 // TODO< inference cycle >

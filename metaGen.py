@@ -186,7 +186,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
 
-    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(Sentence aSentence, Sentence bSentence, Sentence[] resultSentences, TrieElement trieElement) {\n"
+    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(Sentence aSentence, Sentence bSentence, ref Sentence[] resultSentences, TrieElement trieElement) {\n"
     derivationFunctionsSrc+= "   Term a = aSentence.term;\n"
     derivationFunctionsSrc+= "   Term b = bSentence.term;\n"
 
@@ -217,7 +217,7 @@ CopulaTypes = [
 genCodeComplex = False
 
 print "// AUTOGEN: initializes and fills tries"
-print "void initTrie(TrieElement[] rootTries) {"
+print "void initTrie(ref TrieElement[] rootTries) {"
 
 for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     (bFOL, OmitForHOL, ival, copAsymZ) = (copAsym == "-->", lambda str: str if bFOL else "", lambda str,t: str.replace("t",t), copAsym.replace("t","z"))
@@ -225,7 +225,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     # TODO< implement inference generation function to generate code which accepts only one argument >
     #print "(A "+copAsym+" B)\t\t\t\t\t|-\t(B "+ival(copAsym,"-t")+" A)\t\t(Truth:Conversion)"
     
-    if genCodeComplex:
+    if True:
         #print "(A "+copAsym+" B),\t(B "+copAsymZ+" C)\t\t\t|-\t(A "+ival(copAsym,"t+z")+" C)\t\t(Truth:deduction"+OmitForHOL(", Desire:Strong")+")"
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"), ("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     
