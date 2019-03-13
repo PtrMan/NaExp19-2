@@ -1,6 +1,9 @@
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
 
+// TODO< convert term to string with a function which does so >
+// TODO< debug message when adding a concept in conceptualization >
+
 
 // TODO< add table for beliefs of concept! >
 // call it ExpPriorityTable because it takes only the expectation into account for ranking >
@@ -38,6 +41,18 @@ void main() {
 		reasoner.mem.conceptualize(sentence);
 	}
 	
+	{
+		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	/* commented because it got overhauled
+
 	Term testConceptName = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
 	Concept testConcept = new Concept(testConceptName);
 
@@ -49,11 +64,15 @@ void main() {
 		testConcept.beliefs ~= beliefSentence;
 
 		reasoner.mem.conceptualize(beliefSentence);
-	}
+	} */
 
 	writeln("test derivation");
 
 	// do test inference and look at the result (s)
+
+
+	// TODO< pick random n concepts of the enumerated subterms of testtask and do inference for them >
+
 	Sentence[] derivedSentences = reasoner.mem.infer(testTask, testConcept, reasoner.deriver);
 
 	writeln("derived sentences#=", derivedSentences.length);
@@ -475,7 +494,7 @@ class Memory {
 	}
 
 	// creates concepts if necessary and puts the belief into all relevant concepts 
-	public final void conceptualize(Sentence belief) {
+	public final void conceptualize(Term term) {
 		// conceptualizes by selected term recursivly
 		void conceptualizeByTermRec(Term term) {
 			if(!concepts.hasConceptByName(term)) {
@@ -483,11 +502,6 @@ class Memory {
 
 				Concept createdConcept = new Concept(term);
 				concepts.insertConcept(createdConcept);
-			}
-
-			{ // add belief
-				Concept concept = concepts.retConceptByName(term);
-				concept.beliefs ~= belief;
 			}
 
 			{ // call recursivly
@@ -507,7 +521,36 @@ class Memory {
 			}
 		}
 
-		conceptualizeByTermRec(belief.term);
+		conceptualizeByTermRec(term);
+	}
+
+	// adds the belief to the concepts
+	public final void addBeliefToConcepts(Sentence belief) {
+		// selects term recursivly
+		void addBeliefRec(Term name) {
+			// TODO< enable when debuging   >  assert concepts.hasConceptByName(term)
+
+			auto concept = concepts.retConceptByName(name);
+			concept.beliefs ~= belief; // TODO< insert with table of beliefs >
+
+			{ // call recursivly
+				if (cast(BinaryTerm)name !is null) {
+					Binary binary = cast(Binary)name; // TODO< cast to binaryTerm and use methods to access children >
+
+					conceptualizeByTermRec(binary.subject);
+					conceptualizeByTermRec(binary.predicate);
+				}
+				else if (cast(AtomicTerm)name !is null) {
+					// we can't recurse into atomics
+				}
+				else {
+					// TODO< call function which throws an exception in debug mode >
+					throw new Exception("conceptualize(): unhandled case!");
+				}
+			}
+		}
+
+		addBeliefRec(belief.term);
 	}
 }
 
