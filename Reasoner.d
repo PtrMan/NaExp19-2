@@ -268,6 +268,8 @@ class TruthValue {
 	}
 
 	public static TruthValue calc(string function_, TruthValue a, TruthValue b) {
+		float horizon = 1.0f;
+
 		double f1 = a.freq;
 		double c1 = a.conf;
 		double f2 = b.freq;
@@ -284,14 +286,26 @@ class TruthValue {
 			return new TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "induction") {
-			return abduction(b, a, 1.0);
+			return abduction(b, a, horizon);
 		}
 		else if(function_ == "abduction") {
-			return abduction(a, b, 1.0);
+			return abduction(a, b, horizon);
 		}
 		else if(function_ == "deduction") {
 			double f = and(f1, f2);
         	double c = and(c1, c2, f);
+			return new TruthValue(cast(float)f, c);
+		}
+		else if(function_ == "resemblance") {
+			double f = and(f1, f2);
+        	double c = and(c1, c2, or(f1, f2));
+			return new TruthValue(cast(float)f, c);
+		}
+		else if(function_ == "comparison") {
+			double f0 = or(f1, f2);
+        	double f = (f0 == 0.0) ? 0.0 : (and(f1, f2) / f0);
+        	double w = and(f0, c1, c2);
+        	double c = w2c(w, horizon);
 			return new TruthValue(cast(float)f, c);
 		}
 		// TODO< implement other truth functions >
