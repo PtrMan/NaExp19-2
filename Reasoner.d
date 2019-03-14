@@ -58,6 +58,36 @@ void main() {
 	}
 
 	{
+		Term term = new Binary("-->", new AtomicTerm("c"), new AtomicTerm("d"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{
+		Term term = new Binary("-->", new AtomicTerm("d"), new AtomicTerm("e"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{
+		Term term = new Binary("-->", new AtomicTerm("e"), new AtomicTerm("f"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{
 		Term term = new Binary("<=>", new AtomicTerm("b"), new AtomicTerm("c"));
 		auto tv = new TruthValue(1.0f, 0.9f);
 		auto stamp = new Stamp([reasoner.mem.stampCounter++]);

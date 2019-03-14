@@ -201,12 +201,18 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(Sentence aSentence, Sentence bSentence, ref Sentence[] resultSentences, TrieElement trieElement) {\n"
     derivationFunctionsSrc+= "   Term a = aSentence.term;\n"
     derivationFunctionsSrc+= "   Term b = bSentence.term;\n"
+    derivationFunctionsSrc+= "   \n"
+    derivationFunctionsSrc+= "   Term conclusionSubj = "+conclusionSubjCode+";\n"
+    derivationFunctionsSrc+= "   Term conclusionPred = "+conclusionPredCode+";\n"
 
-    derivationFunctionsSrc+= "   Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", "+conclusionSubjCode+", "+conclusionPredCode+");\n"
+    derivationFunctionsSrc+= "   if(!isSameRec(conclusionSubj, conclusionPred)) { // conclusion with same subject and predicate are forbidden by NAL\n"    
 
-    derivationFunctionsSrc+= "   Stamp stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
-    derivationFunctionsSrc+= "   TruthValue tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
-    derivationFunctionsSrc+= "   resultSentences ~= new Sentence(conclusionTerm, tv, stamp);\n"
+    derivationFunctionsSrc+= "      Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", conclusionSubj, conclusionPred);\n"
+
+    derivationFunctionsSrc+= "      Stamp stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
+    derivationFunctionsSrc+= "      TruthValue tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
+    derivationFunctionsSrc+= "      resultSentences ~= new Sentence(conclusionTerm, tv, stamp);\n"
+    derivationFunctionsSrc+= "   }\n"
     derivationFunctionsSrc+= "}\n"
     derivationFunctionsSrc+= "\n"
     derivationFunctionsSrc+= "\n"
