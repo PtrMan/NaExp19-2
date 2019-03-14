@@ -1,13 +1,9 @@
-// TODO< refecator < use Sentences object for collecting results
-
 // TODO< refactor < put functions to update belief of single concept to public function        of concept> >
 // TODO< refactor < put functions to query if a belief exists to public function               of concept > >
 
 
 
 
-
-// TODO< lock stamp counter and increment >
 
 
 
@@ -17,6 +13,9 @@
 
 // LATER TODO< basic Q&A >
 // LATER TODO< basic attention mechanism >
+
+// LATER TODO< add rules for products to metaGen.py >
+
 
 // LATER TODO< add rules for detachment to metaGen.py >
 // LATER TODO< metaGen.py : generate backward inference rules >
@@ -39,6 +38,7 @@ import std.algorithm.mutation;
 import std.algorithm.comparison;
 import std.conv;
 import core.sync.mutex;
+import core.atomic;
 
 void main() {	
 	shared Reasoner reasoner = new shared Reasoner();
@@ -47,17 +47,29 @@ void main() {
 
 
 
-
 	// add existing belief
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
+		
+		writeln("DEBG Z");
+
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		
+		writeln("DEBG afterStamp");
+
 		auto beliefSentence = new shared Sentence(term, tv, stamp);
+		writeln("DEBU fgvfvfd");
+
 
 		reasoner.mem.conceptualize(beliefSentence.term);
+
+		writeln("DEBU f");
+
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
+
+	writeln("DEBU 3");
 
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("c"), new shared AtomicTerm("d"));
@@ -99,7 +111,7 @@ void main() {
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
-
+	writeln("DEB 2");
 
 	// TODO< implement reasoning loop >
 
@@ -202,15 +214,21 @@ shared class Memory {
 
 	public int numberOfBeliefs = 100; // Reasoner parameter!
 
+	private long stampCounter = 0;
+
 	public final this() {
 		concepts = new ConceptTable();
 		workingMemory = new WorkingMemory();
 
-		stampCounter = new shared StampCounterClass();
+		stampCounter = 0;
 	}
 
 	public final shared long retUniqueStampCounter() {
-		return stampCounter.retUniqueStampCounter();
+		long result;
+		synchronized {
+			result = stampCounter++;
+		}
+		return result;
 	}
 
 	public final Sentences infer(shared Task t, shared Concept c, shared TrieDeriver deriver) {
@@ -237,10 +255,12 @@ shared class Memory {
 
 	// creates concepts if necessary and puts the belief into all relevant concepts 
 	public final void conceptualize(shared Term term) {
-		bool debugVerbose = false;
+		bool debugVerbose = true;
 
 		// conceptualizes by selected term recursivly
 		void conceptualizeByTermRec(shared Term term) {
+			writeln("C 2");
+
 			if(debugVerbose)   writeln("conceptualize: called for term=" ~ convToStrRec(term));
 
 			if(!concepts.hasConceptByName(term)) {
@@ -251,6 +271,8 @@ shared class Memory {
 				auto createdConcept = new shared Concept(term, numberOfBeliefs);
 				concepts.insertConcept(createdConcept);
 			}
+
+			if(debugVerbose)   writeln("conceptualize: call recursivly");
 
 			{ // call recursivly
 				if (cast(shared BinaryTerm)term !is null) {
@@ -268,6 +290,8 @@ shared class Memory {
 				}
 			}
 		}
+
+		writeln("C 1");
 
 		conceptualizeByTermRec(term);
 	}
@@ -300,14 +324,6 @@ shared class Memory {
 
 		addBeliefRec(belief.term);
 	}
-
-	private shared synchronized class StampCounterClass {
-		private long stampCounter = 0; // counter used for the creation of stamps
-		final long retUniqueStampCounter() {
-			return stampCounter++;
-		}
-	}
-	private shared StampCounterClass stampCounter;
 }
 
 shared class Reasoner {
@@ -323,7 +339,10 @@ shared class Reasoner {
 	}
 
 	public void singleCycle() {
-		bool debugVerbose = false;
+		bool debugVerbose = true;
+
+		if (debugVerbose)  writeln("singleCycle() ENTRY");
+		scope(exit)  if (debugVerbose)  writeln("singleCycle() EXIT");
 
 		shared(Sentence)[] derivedSentences;
 		
@@ -456,7 +475,7 @@ bool interpretTrieRec(
 	shared Sentence rightSentence,
 	Sentences resultSentences
 ) {
-	bool debugVerbose = false;
+	bool debugVerbose = true;
 
 	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
@@ -749,8 +768,8 @@ class Stamp {
 	// TODO OPTIMIZATION< allocate non-GC'ed memory >
 	public shared(long[]) trail;
 
-	public shared this(long[] trail) {
-		this.trail = cast(shared(long[]))trail;
+	public shared this(shared(long[]) trail) {
+		this.trail = trail;
 	}
 	
 	public static bool checkOverlap(shared Stamp a, shared Stamp b) {
@@ -770,7 +789,7 @@ class Stamp {
 	}
 
 	public static shared(Stamp) merge(shared Stamp a, shared Stamp b) {
-		long[] zipped = [];
+		shared(long[]) zipped = [];
 
         int ia = 0, ib = 0;
         foreach(ulong i; 0..min(a.trail.length, b.trail.length)) {
@@ -818,7 +837,7 @@ class Concept {
 }
 
 void updateBelief(shared Concept concept, shared Sentence belief) {
-	bool debugVerbose = false;
+	bool debugVerbose = true;
 
 	if(debugVerbose)  writeln("updatedBelief ENTRY");
 
@@ -941,25 +960,48 @@ string convToStrRec(shared Term term) {
 
 
 
-// TODO< put under AIKR with a strategy similar to ALANN >
 
+
+private class Concepts {
+	public shared(Concept)[] arr;
+
+	public shared this(shared(Concept)[] arr) {
+		this.arr = arr;
+	}
+}
+
+// TODO< put under AIKR with a strategy similar to ALANN >
 // a table is like a bag in Open-NARS, just with different policies for prioritization and attention
 class ConceptTable {
 	private shared(Concept)[] concepts;
 
 	// concepts by hashes of names
-	private shared(Concept)[][long] conceptsByNameHash;
+	private Concepts[long] conceptsByNameHash;
+
 
 	public final shared bool hasConceptByName(shared Term name) {
 		long hashOfName = name.retHash();
 
-		if (!(hashOfName in conceptsByNameHash)) {
+		writeln("DBG E");
+
+		writeln(conceptsByNameHash.length);
+
+		writeln("DBG E2");
+
+		if ((hashOfName in conceptsByNameHash) !is null) {
+			writeln("DBG E1");
 			return false;
 		}
 
-		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
+		writeln("DBG G");
+
+		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName].arr;
 		foreach(shared Concept iConcept; listOfPotentialConcepts) {
+					writeln("DBG N");
+
 			if (isSameRec(iConcept.name, name)) {
+						writeln("DBG M");
+
 				return true;
 			}
 		}
@@ -972,7 +1014,7 @@ class ConceptTable {
 		assert(hasConceptByName(name));
 
 		long hashOfName = name.retHash();
-		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
+		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName].arr;
 		foreach(shared Concept iConcept; listOfPotentialConcepts) {
 			if (isSameRec(iConcept.name, name)) {
 				return iConcept;
@@ -984,14 +1026,18 @@ class ConceptTable {
 
 	// does not check if the concept already exists!
 	public shared final void insertConcept(shared Concept concept) {
+		writeln("DBG Y");
+
 		concepts ~= concept;
 
 		if (concept.name.retHash() in conceptsByNameHash) {
-			conceptsByNameHash[concept.name.retHash()] ~= concept;
+			conceptsByNameHash[concept.name.retHash()].arr ~= concept;
 		}
 		else {
-			conceptsByNameHash[concept.name.retHash()] = [concept];
+			conceptsByNameHash[concept.name.retHash()] = new shared Concepts([concept]);
 		}
+
+		writeln("DBG X");
 	}
 }
 
