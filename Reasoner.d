@@ -32,6 +32,7 @@
 
 // LATER TODO< decision making :( >
 
+import std.array;
 import std.random;
 import std.stdio;
 import std.algorithm.mutation;
@@ -177,6 +178,8 @@ class Memory {
 
 	public shared long stampCounter = 0; // counter used for the creation of stamps
 
+	public int numberOfBeliefs = 100; // Reasoner parameter!
+
 	// commented because not used
 	//Task[] activeTasks; // TODO< refine with some table which takes the priority and exp() into account
 
@@ -190,12 +193,12 @@ class Memory {
 
 		// pick random belief and try to do inference
 
-		if (c.beliefs.length == 0) {
+		if (c.beliefs.entries.length == 0) {
 			return resultSentences; // can't select a belief to do inference
 		}
 
-		long beliefIdx = uniform(0, c.beliefs.length, rng);
-		auto selectedBelief = c.beliefs[beliefIdx];
+		long beliefIdx = uniform(0, c.beliefs.entries.length, rng);
+		auto selectedBelief = c.beliefs.entries[beliefIdx];
 
 		if (Stamp.checkOverlap(t.sentence.stamp, selectedBelief.stamp)) {
 			return resultSentences;
@@ -217,7 +220,7 @@ class Memory {
 
 				writeln("conceptualize: created concept for term=" ~ convToStrRec(term));
 
-				Concept createdConcept = new Concept(term);
+				Concept createdConcept = new Concept(term, numberOfBeliefs);
 				concepts.insertConcept(createdConcept);
 			}
 
@@ -687,6 +690,10 @@ class TruthValue {
 	}
 }
 
+double calcExp(TruthValue tv) {
+	return (tv.freq - 0.5) * /*strength*/tv.conf + /*offset to map to (0;1)*/0.5;
+}
+
 class Stamp {
 	// TODO OPTIMIZATION< allocate non-GC'ed memory >
 	public long[] trail;
@@ -752,10 +759,11 @@ class Sentence {
 class Concept {
 	public Term name;
 
-	public Sentence[] beliefs;
+	public ExpPriorityTable beliefs;
 
-	public final this(Term name) {
+	public final this(Term name, int numberOfBeliefs) {
 		this.name = name;
+		this.beliefs = new ExpPriorityTable(numberOfBeliefs);
 	}
 }
 
@@ -763,18 +771,19 @@ void updateBelief(Concept concept, Sentence belief) {
 	writeln("updatedBelief ENTRY");
 
 	void addBeliefToConcept(Concept concept, Sentence belief) {
-		// TODO< sort by EXP() and limit under AIKR >
-		concept.beliefs ~= belief;
+		concept.beliefs.insertByExp(belief);
+		concept.beliefs.limitSize();
 	}
 
-	for(int beliefIdx=0;beliefIdx<concept.beliefs.length;beliefIdx++) {
-		Sentence iBelief = concept.beliefs[beliefIdx];
+	for(int beliefIdx=0;beliefIdx<concept.beliefs.entries.length;beliefIdx++) {
+		Sentence iBelief = concept.beliefs.entries[beliefIdx];
 
 		if (isSameRec(iBelief.term, belief.term)) {
 			if(Stamp.checkOverlap(iBelief.stamp, belief.stamp)) {
 				// choice rule for beliefs
 				if (belief.truth.conf > iBelief.truth.conf) {
-					concept.beliefs[beliefIdx] = belief;
+					// BUG TODO< remove at index and add belief to the table
+					concept.beliefs.entries[beliefIdx] = belief;
 					return;
 				}
 				return;
@@ -790,7 +799,7 @@ void updateBelief(Concept concept, Sentence belief) {
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
 				auto revisedSentence = new Sentence(belief.term, revisedTruth, mergedStamp);
 
-				concept.beliefs[beliefIdx] = revisedSentence;
+				concept.beliefs.entries[beliefIdx] = revisedSentence;
 
 				return;
 			}
@@ -934,6 +943,34 @@ class ConceptTable {
 	}
 }
 
+// ExpPriorityTable because it takes only the expectation into account for ranking
+class ExpPriorityTable {
+	// sorted by expectation
+	public Sentence[] entries;
+
+	public int maxSize; // maximal size
+
+	public final this(int maxSize) {
+		this.maxSize = maxSize;
+	}
+
+	// doesn't limit size!
+	public void insertByExp(Sentence inserted) {
+		for(int idx=0;idx<entries.length;idx++) {
+			auto iElement = entries[idx];
+			if(iElement.truth.calcExp() < inserted.truth.calcExp()) {
+				entries.insertInPlace(idx, inserted);
+				return;
+			}
+		}
+
+		entries ~= inserted;
+	}
+
+	public final void limitSize() {
+		entries = entries[0..min(entries.length, maxSize)];
+	}
+}
 
 ////////////////////////////////
 ////////////////////////////////
