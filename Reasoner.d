@@ -103,11 +103,9 @@ void main() {
 	// TODO< implement reasoning loop >
 
 
-	foreach(long i;0..20) {  // TEST REASONING LOOP
+	foreach(long i;0..200) {  // TEST REASONING LOOP
 
 
-	writeln("\n\n\n");
-	writeln("---");
 
 	
 	{
@@ -148,9 +146,6 @@ void main() {
 	}
 	
 
-
-
-	writeln("test derivation");
 
 
 	reasoner.singleCycle();
@@ -239,14 +234,16 @@ class Memory {
 
 	// creates concepts if necessary and puts the belief into all relevant concepts 
 	public final void conceptualize(Term term) {
+		bool debugVerbose = false;
+
 		// conceptualizes by selected term recursivly
 		void conceptualizeByTermRec(Term term) {
-			writeln("conceptualize: called for term=" ~ convToStrRec(term));
+			if(debugVerbose)   writeln("conceptualize: called for term=" ~ convToStrRec(term));
 
 			if(!concepts.hasConceptByName(term)) {
 				// create concept and insert into table
 
-				writeln("conceptualize: created concept for term=" ~ convToStrRec(term));
+				if(debugVerbose)   writeln("conceptualize: created concept for term=" ~ convToStrRec(term));
 
 				Concept createdConcept = new Concept(term, numberOfBeliefs);
 				concepts.insertConcept(createdConcept);
@@ -313,6 +310,8 @@ class Reasoner {
 	}
 
 	public void singleCycle() {
+		bool debugVerbose = false;
+
 		Sentence[] derivedSentences;
 		
 		{ // select task and process it with selected concepts
@@ -340,7 +339,7 @@ class Reasoner {
 
 						auto selectedConcept = mem.concepts.retConceptByName(iSampledTerm);
 
-						writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
+						if(debugVerbose)   writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
 						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver);
 					}
 				}
@@ -348,11 +347,11 @@ class Reasoner {
 		}
 
 		{ // debug
-			writeln("derived sentences#=", derivedSentences.length);
+			if(false)   writeln("derived sentences#=", derivedSentences.length);
 
 			foreach(Sentence iDerivedSentence; derivedSentences) {
 				// TODO< convert Sentence to string and print >
-				writeln("derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+				writeln("   derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
 			}
 		}
 
@@ -796,7 +795,9 @@ class Concept {
 }
 
 void updateBelief(Concept concept, Sentence belief) {
-	writeln("updatedBelief ENTRY");
+	bool debugVerbose = false;
+
+	if(debugVerbose)  writeln("updatedBelief ENTRY");
 
 	void addBeliefToConcept(Concept concept, Sentence belief) {
 		concept.beliefs.insertByExp(belief);
