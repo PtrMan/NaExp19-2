@@ -205,6 +205,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     derivationFunctionsSrc+= "   Term conclusionSubj = "+conclusionSubjCode+";\n"
     derivationFunctionsSrc+= "   Term conclusionPred = "+conclusionPredCode+";\n"
 
+    # TODO< do allow it the conclusion copula is not a real copula >
     derivationFunctionsSrc+= "   if(!isSameRec(conclusionSubj, conclusionPred)) { // conclusion with same subject and predicate are forbidden by NAL\n"    
 
     derivationFunctionsSrc+= "      Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", conclusionSubj, conclusionPred);\n"
