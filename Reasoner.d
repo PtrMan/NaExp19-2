@@ -118,7 +118,7 @@ void main() {
 
 		auto task = new Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= task;
+		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
 	}
 
 
@@ -131,7 +131,7 @@ void main() {
 
 		auto task = new Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= task;
+		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
 	}
 	
 
@@ -144,7 +144,7 @@ void main() {
 
 		auto task = new Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= task;
+		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
 	}
 	
 
@@ -167,7 +167,35 @@ void main() {
 class WorkingMemory {
 	// 
 	// TODO< add prioritization based on EXP() and activation(which is calculated with exponentially moving average) >
-	Task[] activeTasks;
+	TaskWithAttention[] activeTasks;
+}
+
+// task with ema of activation
+class TaskWithAttention {
+	Task task;
+	Ema ema; // ema used to compute activation
+
+	public final this(Task task) {
+		this.task = task;
+		ema.k = 0.1; // TODO< refine and expose parameter >
+	}
+
+	public final double calcRanking() {
+		// TODO< refine formula >
+		return ema.ema + task.sentence.truth.calcExp();
+	}
+}
+
+// exponential moving average
+// see for explaination https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp
+struct Ema {
+	double k = 1; // adaptivity factor
+	double ema = 0;
+
+	public final double update(double value) {
+		ema = value * k + ema * (1.0 - k);
+		return ema;
+	}
 }
 
 
@@ -291,7 +319,7 @@ class Reasoner {
 			Task selectedTask;
 			{ // select random task for processing
 				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng);
-				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex];
+				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex].task;
 			}
 
 			// do test inference and look at the result (s)
@@ -347,7 +375,7 @@ class Reasoner {
 
 				// TODO< don't add if it is known by stamp !!! >
 
-				mem.workingMemory.activeTasks ~= task;
+				mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
 			}
 		}
 	}
