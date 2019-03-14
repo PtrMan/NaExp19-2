@@ -11,7 +11,6 @@
 
 
 
-// TODO< revision >
 
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
