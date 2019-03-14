@@ -41,6 +41,33 @@ void main() {
 	Reasoner reasoner = new Reasoner();
 	reasoner.init();
 
+
+
+
+
+	// add existing belief
+	{
+		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{
+		Term term = new Binary("<=>", new AtomicTerm("b"), new AtomicTerm("c"));
+		auto tv = new TruthValue(1.0f, 0.9f);
+		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
+		Sentence beliefSentence = new Sentence(term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+
+
 	// TODO< implement reasoning loop >
 
 
@@ -89,26 +116,6 @@ void main() {
 	}
 	
 
-	// add existing belief
-	{
-		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
-
-		reasoner.mem.conceptualize(beliefSentence.term);
-		reasoner.mem.addBeliefToConcepts(beliefSentence);
-	}
-
-	{
-		Term term = new Binary("<=>", new AtomicTerm("b"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
-
-		reasoner.mem.conceptualize(beliefSentence.term);
-		reasoner.mem.addBeliefToConcepts(beliefSentence);
-	}
 
 
 	writeln("test derivation");
@@ -601,6 +608,14 @@ class TruthValue {
         	double c = w2c(w, horizon);
 			return new TruthValue(cast(float)f, c);
 		}
+		else if(function_ == "revision") {
+			double w1 = c2w(a.conf, horizon);
+        	double w2 = c2w(b.conf, horizon);
+        	double w = w1 + w2;
+        	double f = (w1 * f1 + w2 * f2) / w;
+			double c = w2c(w, horizon);
+			return new TruthValue(cast(float)f, c);
+		}
 		// TODO< implement other truth functions >
 
 		throw new Exception("Unimplemented truth function name=" ~ function_);
@@ -619,6 +634,9 @@ class TruthValue {
 
 	private static double w2c(double w, double horizon) {
 		return w / (w + horizon);
+	}
+	private static double c2w(double c, double horizon) {
+		return horizon * c / (1.0 - c);
 	}
 
 	private static double or(double a, double b) {
@@ -705,6 +723,8 @@ class Concept {
 }
 
 void updateBelief(Concept concept, Sentence belief) {
+	writeln("updatedBelief ENTRY");
+
 	void addBeliefToConcept(Concept concept, Sentence belief) {
 		// TODO< sort by EXP() and limit under AIKR >
 		concept.beliefs ~= belief;
@@ -724,11 +744,16 @@ void updateBelief(Concept concept, Sentence belief) {
 			}
 			else {
 				// doesn't overlap - revise
+				writeln("updateBelief: revise stamps = " ~ to!string(belief.stamp.trail) ~ "   " ~ to!string(iBelief.stamp.trail));
 
-				// TODO TODO TODO TODO TODO TODO TODO
+				auto mergedStamp = Stamp.merge(belief.stamp, iBelief.stamp);
 
-				// doesn't overlap - add it
-				addBeliefToConcept(concept, belief);
+				writeln("   merged stamp = " ~ to!string(mergedStamp.trail));
+
+				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
+				auto revisedSentence = new Sentence(belief.term, revisedTruth, mergedStamp);
+
+				concept.beliefs[beliefIdx] = revisedSentence;
 
 				return;
 			}
