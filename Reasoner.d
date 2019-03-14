@@ -110,20 +110,6 @@ void main() {
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
-	/* commented because it got overhauled
-
-	Term testConceptName = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
-	Concept testConcept = new Concept(testConceptName);
-
-	{
-		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
-		testConcept.beliefs ~= beliefSentence;
-
-		reasoner.mem.conceptualize(beliefSentence);
-	} */
 
 	writeln("test derivation");
 
@@ -442,10 +428,7 @@ bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence r
 	else if(trieElement.type == TrieElement.EnumType.EXEC) {
 		if(debugVerbose) writeln("interpretTrieRec exec");
 
-		/*commented because it doesn't return anything   Term execResult = */trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
-		/*if (execResult !is null) {
-			return execResult;
-		} commented because it doesn't return anything*/
+		trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
 		if(debugVerbose) writeln("interpretTrieRec walkCompare");
