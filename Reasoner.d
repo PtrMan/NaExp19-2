@@ -1,10 +1,10 @@
+// TODO< refecator < use Sentences object for collecting results
+
+// TODO< refactor < put functions to update belief of single concept to public function        of concept> >
+// TODO< refactor < put functions to query if a belief exists to public function               of concept > >
 
 
-// TODO< implement basic reasoning loop >
 
-
-// TODO< add table for beliefs of concept! >
-// call it ExpPriorityTable because it takes only the expectation into account for ranking >
 
 
 // TODO< lock stamp counter and increment >
@@ -38,9 +38,10 @@ import std.stdio;
 import std.algorithm.mutation;
 import std.algorithm.comparison;
 import std.conv;
+import core.sync.mutex;
 
 void main() {	
-	Reasoner reasoner = new Reasoner();
+	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
 
 
@@ -49,50 +50,50 @@ void main() {
 
 	// add existing belief
 	{
-		Term term = new Binary("-->", new AtomicTerm("b"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
 	{
-		Term term = new Binary("-->", new AtomicTerm("c"), new AtomicTerm("d"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("c"), new shared AtomicTerm("d"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
 	{
-		Term term = new Binary("-->", new AtomicTerm("d"), new AtomicTerm("e"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("e"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
 	{
-		Term term = new Binary("-->", new AtomicTerm("e"), new AtomicTerm("f"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("e"), new shared AtomicTerm("f"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
 	{
-		Term term = new Binary("<=>", new AtomicTerm("b"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		Sentence beliefSentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("<=>", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
@@ -109,40 +110,40 @@ void main() {
 
 	
 	{
-		Term term = new Binary("<->", new AtomicTerm("a"), new AtomicTerm("b"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		auto sentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence(term, tv, stamp);
 
-		auto task = new Task();
+		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
 	}
 
 
 
 	{
-		Term term = new Binary("-->", new AtomicTerm("d"), new AtomicTerm("c"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		auto sentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("c"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence(term, tv, stamp);
 
-		auto task = new Task();
+		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
 	}
 	
 
 	
 	{
-		Term term = new Binary("<=>", new AtomicTerm("a"), new AtomicTerm("b"));
-		auto tv = new TruthValue(1.0f, 0.9f);
-		auto stamp = new Stamp([reasoner.mem.stampCounter++]);
-		auto sentence = new Sentence(term, tv, stamp);
+		shared Term term = new shared Binary("<=>", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence(term, tv, stamp);
 
-		auto task = new Task();
+		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
 	}
 	
 
@@ -166,11 +167,11 @@ class WorkingMemory {
 }
 
 // task with ema of activation
-class TaskWithAttention {
-	Task task;
+shared class TaskWithAttention {
+	shared Task task;
 	Ema ema; // ema used to compute activation
 
-	public final this(Task task) {
+	public final shared this(shared Task task) {
 		this.task = task;
 		ema.k = 0.1; // TODO< refine and expose parameter >
 	}
@@ -194,25 +195,26 @@ struct Ema {
 }
 
 
-class Memory {
+shared class Memory {
 	public WorkingMemory workingMemory;
 	public ConceptTable concepts;
 	public Xorshift rng = Xorshift(24);
 
-	public shared long stampCounter = 0; // counter used for the creation of stamps
-
 	public int numberOfBeliefs = 100; // Reasoner parameter!
-
-	// commented because not used
-	//Task[] activeTasks; // TODO< refine with some table which takes the priority and exp() into account
 
 	public final this() {
 		concepts = new ConceptTable();
 		workingMemory = new WorkingMemory();
+
+		stampCounter = new shared StampCounterClass();
 	}
 
-	public final Sentence[] infer(Task t, Concept c, TrieDeriver deriver) {
-		Sentence[] resultSentences;
+	public final shared long retUniqueStampCounter() {
+		return stampCounter.retUniqueStampCounter();
+	}
+
+	public final Sentences infer(shared Task t, shared Concept c, shared TrieDeriver deriver) {
+		Sentences resultSentences = new Sentences();
 
 		// pick random belief and try to do inference
 
@@ -220,7 +222,8 @@ class Memory {
 			return resultSentences; // can't select a belief to do inference
 		}
 
-		long beliefIdx = uniform(0, c.beliefs.entries.length, rng);
+		Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
+		long beliefIdx = uniform(0, cast(int)c.beliefs.entries.length, rng2);
 		auto selectedBelief = c.beliefs.entries[beliefIdx];
 
 		if (Stamp.checkOverlap(t.sentence.stamp, selectedBelief.stamp)) {
@@ -233,11 +236,11 @@ class Memory {
 	}
 
 	// creates concepts if necessary and puts the belief into all relevant concepts 
-	public final void conceptualize(Term term) {
+	public final void conceptualize(shared Term term) {
 		bool debugVerbose = false;
 
 		// conceptualizes by selected term recursivly
-		void conceptualizeByTermRec(Term term) {
+		void conceptualizeByTermRec(shared Term term) {
 			if(debugVerbose)   writeln("conceptualize: called for term=" ~ convToStrRec(term));
 
 			if(!concepts.hasConceptByName(term)) {
@@ -245,18 +248,18 @@ class Memory {
 
 				if(debugVerbose)   writeln("conceptualize: created concept for term=" ~ convToStrRec(term));
 
-				Concept createdConcept = new Concept(term, numberOfBeliefs);
+				auto createdConcept = new shared Concept(term, numberOfBeliefs);
 				concepts.insertConcept(createdConcept);
 			}
 
 			{ // call recursivly
-				if (cast(BinaryTerm)term !is null) {
-					Binary binary = cast(Binary)term; // TODO< cast to binaryTerm and use methods to access children >
+				if (cast(shared BinaryTerm)term !is null) {
+					auto binary = cast(shared Binary)term; // TODO< cast to binaryTerm and use methods to access children >
 
 					conceptualizeByTermRec(binary.subject);
 					conceptualizeByTermRec(binary.predicate);
 				}
-				else if (cast(AtomicTerm)term !is null) {
+				else if (cast(shared AtomicTerm)term !is null) {
 					// we can't recurse into atomics
 				}
 				else {
@@ -270,22 +273,22 @@ class Memory {
 	}
 
 	// adds the belief to the concepts
-	public final void addBeliefToConcepts(Sentence belief) {
+	public final void addBeliefToConcepts(shared Sentence belief) {
 		// selects term recursivly
-		void addBeliefRec(Term name) {
+		void addBeliefRec(shared Term name) {
 			// TODO< enable when debuging   >  assert concepts.hasConceptByName(term)
 
 			auto concept = concepts.retConceptByName(name);
 			updateBelief(concept, belief);
 
 			{ // call recursivly
-				if (cast(BinaryTerm)name !is null) {
-					Binary binary = cast(Binary)name; // TODO< cast to binaryTerm and use methods to access children >
+				if (cast(shared BinaryTerm)name !is null) {
+					shared Binary binary = cast(shared Binary)name; // TODO< cast to binaryTerm and use methods to access children >
 
 					addBeliefRec(binary.subject);
 					addBeliefRec(binary.predicate);
 				}
-				else if (cast(AtomicTerm)name !is null) {
+				else if (cast(shared AtomicTerm)name !is null) {
 					// we can't recurse into atomics
 				}
 				else {
@@ -297,13 +300,23 @@ class Memory {
 
 		addBeliefRec(belief.term);
 	}
+
+	private shared synchronized class StampCounterClass {
+		private long stampCounter = 0; // counter used for the creation of stamps
+		final long retUniqueStampCounter() {
+			return stampCounter++;
+		}
+	}
+	private shared StampCounterClass stampCounter;
 }
 
-class Reasoner {
+shared class Reasoner {
 	public Xorshift rng = Xorshift(12);
 
-	Memory mem = new Memory();
+	shared Memory mem = new shared Memory();
 	TrieDeriver deriver = new TrieDeriver();
+
+	public this() {}
 
 	public void init() {
 		deriver.init();
@@ -312,12 +325,13 @@ class Reasoner {
 	public void singleCycle() {
 		bool debugVerbose = false;
 
-		Sentence[] derivedSentences;
+		shared(Sentence)[] derivedSentences;
 		
 		{ // select task and process it with selected concepts
-			Task selectedTask;
+			shared Task selectedTask;
 			{ // select random task for processing
-				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng);
+				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
+				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng2);
 				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex].task;
 			}
 
@@ -325,14 +339,15 @@ class Reasoner {
 
 			
 			{ // pick random n concepts of the enumerated subterms of testtask and do inference for them
-				Term[] termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
+				auto termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
 
 				int numberOfSampledTerms = 5;
 				// sample terms from termAndSubtermsOfSentenceOfTask
-				Term[] sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng);
+				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
+				auto sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng2);
 				
 				{ // do inference for the concepts named by sampledTerms
-					foreach(Term iSampledTerm; sampledTerms) {
+					foreach(shared Term iSampledTerm; sampledTerms) {
 						if (!mem.concepts.hasConceptByName(iSampledTerm)) {
 							continue;
 						}
@@ -340,7 +355,7 @@ class Reasoner {
 						auto selectedConcept = mem.concepts.retConceptByName(iSampledTerm);
 
 						if(debugVerbose)   writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
-						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver);
+						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver).arr;
 					}
 				}
 			}
@@ -349,14 +364,14 @@ class Reasoner {
 		{ // debug
 			if(false)   writeln("derived sentences#=", derivedSentences.length);
 
-			foreach(Sentence iDerivedSentence; derivedSentences) {
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
 				// TODO< convert Sentence to string and print >
 				writeln("   derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
 			}
 		}
 
 		{ // put derived results into concepts
-			foreach(Sentence iDerivedSentence; derivedSentences) {
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
 				mem.conceptualize(iDerivedSentence.term);
 
 				// WORKAROUND< for now we just add it to the beliefs >
@@ -368,13 +383,13 @@ class Reasoner {
 
 		{ // TODO ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value >
 			// WORKAROUND< we just add the conclusions as tasks >
-			foreach(Sentence iDerivedSentence; derivedSentences) {
-				Task task = new Task();
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
+				auto task = new shared Task();
 				task.sentence = iDerivedSentence;
 
 				// TODO< don't add if it is known by stamp !!! >
 
-				mem.workingMemory.activeTasks ~= new TaskWithAttention(task);
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
 			}
 		}
 	}
@@ -384,24 +399,28 @@ class Reasoner {
 
 class TrieDeriver {
 	// tries which are the roots and are iterated independently
-	TrieElement[] rootTries;
+	shared(TrieElement)[] rootTries;
 
-	final void init() {
-		rootTries = [];
-		initTrie(rootTries);
+	final shared void init() {
+		rootTries = initTrie();
 		writeln("TrieDeriver: init with nTries=", rootTries.length);
 	}
 
-	final void derive(Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences) {
-		foreach(TrieElement iRootTries; rootTries) {
+	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
+		foreach(shared TrieElement iRootTries; rootTries) {
 			interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences);
 			interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences);
 		}
 	}
 }
 
+// wrapper for multiple sentences to pass around in a shared context
+class Sentences {
+	public shared(Sentence)[] arr;
+}
+
 class TrieElement {
-	public final this(EnumType type) {
+	public final shared this(EnumType type) {
 		this.type = type;
 	}
 
@@ -414,7 +433,7 @@ class TrieElement {
 
 	// function which builds the result or returns null on failure
 	// trie element is passed to pass some additional data to it
-	public void function(Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences, TrieElement trieElement) fp;
+	public void function(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences, shared TrieElement trieElement) fp;
 
 	public TrieElement[] children; // children are traversed if the check was true
 
@@ -431,24 +450,29 @@ class TrieElement {
 
 // interprets a trie
 // returns null if it fails - used to propagate control flow
-bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence rightSentence, ref Sentence[] resultSentences) {
+bool interpretTrieRec(
+	shared TrieElement trieElement,
+	shared Sentence leftSentence,
+	shared Sentence rightSentence,
+	Sentences resultSentences
+) {
 	bool debugVerbose = false;
 
 	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
-	Term left = leftSentence.term;
-	Term right = rightSentence.term;
+	shared Term left = leftSentence.term;
+	shared Term right = rightSentence.term;
 
-	Term walk(string[] path) {
-		Term walkToBinarySubject(Term root) {
-			return cast(Binary)root !is null ? (cast(Binary)root).subject : null;
+	shared(Term) walk(shared(string[]) path) {
+		shared(Term) walkToBinarySubject(shared Term root) {
+			return cast(shared Binary)root !is null ? (cast(shared Binary)root).subject : null;
 		}
 
-		Term walkToBinaryPredicate(Term root) {
-			return cast(Binary)root !is null ? (cast(Binary)root).predicate : null;
+		shared(Term) walkToBinaryPredicate(shared Term root) {
+			return cast(shared Binary)root !is null ? (cast(shared Binary)root).predicate : null;
 		}
 
-		Term current = null;
+		shared Term current = null;
 
 		foreach(string iPath; path) {
 			if (iPath == "a.subject") {
@@ -507,8 +531,8 @@ bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence r
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
 		if(debugVerbose) writeln("interpretTrieRec walkCompare");
 
-		Term leftElement = walk(trieElement.pathLeft);
-		Term rightElement = walk(trieElement.pathRight);
+		auto leftElement = walk(trieElement.pathLeft);
+		auto rightElement = walk(trieElement.pathRight);
 
 		if (leftElement is null || rightElement is null || !isSameRec(leftElement, rightElement)) {
 			return true; // abort if walk failed or if the walked elements don't match up
@@ -516,7 +540,7 @@ bool interpretTrieRec(TrieElement trieElement, Sentence leftSentence, Sentence r
 	}
 
 	// we need to iterate children if we are here
-	foreach( TrieElement iChildren; trieElement.children) {
+	foreach( shared TrieElement iChildren; trieElement.children) {
 		bool recursionResult = interpretTrieRec(iChildren, leftSentence, rightSentence, resultSentences);
 		if (recursionResult ) {
 			//return recursionResult;
@@ -541,7 +565,7 @@ interface Term {
 	char retType();
 
 	// same terms have to have the same hash
-	long retHash();
+	shared long retHash();
 }
 
 
@@ -574,12 +598,12 @@ long calcHash(string str) {
 }
 
 class AtomicTerm : Term {
-	public final this(string name) {
+	public shared final this(string name) {
 		this.name = name;
         cachedHash = calcHash(name);
 	}
 
-    public long retHash() {
+    public shared long retHash() {
         return cachedHash;
     }
 
@@ -595,7 +619,7 @@ interface BinaryTerm : Term {
 }
 
 class Binary : BinaryTerm {
-	public final this(string copula, Term subject, Term predicate) {
+	public shared final this(string copula, shared Term subject, shared Term predicate) {
 		this.copula = copula;
 		this.subject = subject;
 		this.predicate = predicate;
@@ -603,7 +627,7 @@ class Binary : BinaryTerm {
 
 	public char retType() {return 'b';}
 
-    public long retHash() {
+    public shared long retHash() {
     	// TODO OPTIMIZATION< cache hash >
 
         long hash = subject.retHash();
@@ -620,8 +644,8 @@ class Binary : BinaryTerm {
     }
 
 	public string copula;
-	public Term subject;
-	public Term predicate;
+	public shared Term subject;
+	public shared Term predicate;
 }
 
 // TODO< convert to struct >
@@ -629,12 +653,12 @@ class TruthValue {
 	public float freq;
 	public double conf;
 
-	public final this(float freq, double conf) {
+	public final shared this(float freq, double conf) {
 		this.freq = freq;
 		this.conf = conf;
 	}
 
-	public static TruthValue calc(string function_, TruthValue a, TruthValue b) {
+	public static shared(TruthValue) calc(string function_, shared TruthValue a, shared TruthValue b) {
 		float horizon = 1.0f;
 
 		double f1 = a.freq;
@@ -645,12 +669,12 @@ class TruthValue {
 		if (function_ == "analogy") {
         	double f = and(f1, f2);
         	double c = and(c1, c2, f2);
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "resemblance") {
 			double f = and(f1, f2);
         	double c = and(c1, c2, or(f1, f2));
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "induction") {
 			return abduction(b, a, horizon);
@@ -661,19 +685,19 @@ class TruthValue {
 		else if(function_ == "deduction") {
 			double f = and(f1, f2);
         	double c = and(c1, c2, f);
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "resemblance") {
 			double f = and(f1, f2);
         	double c = and(c1, c2, or(f1, f2));
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "comparison") {
 			double f0 = or(f1, f2);
         	double f = (f0 == 0.0) ? 0.0 : (and(f1, f2) / f0);
         	double w = and(f0, c1, c2);
         	double c = w2c(w, horizon);
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		else if(function_ == "revision") {
 			double w1 = c2w(a.conf, horizon);
@@ -681,14 +705,14 @@ class TruthValue {
         	double w = w1 + w2;
         	double f = (w1 * f1 + w2 * f2) / w;
 			double c = w2c(w, horizon);
-			return new TruthValue(cast(float)f, c);
+			return new shared TruthValue(cast(float)f, c);
 		}
 		// TODO< implement other truth functions >
 
 		throw new Exception("Unimplemented truth function name=" ~ function_);
 	}
 
-	private static TruthValue abduction(TruthValue a, TruthValue b, double horizon) {
+	private static shared(TruthValue) abduction(shared TruthValue a, shared TruthValue b, double horizon) {
 		double f1 = a.freq;
 		double c1 = a.conf;
 		double f2 = b.freq;
@@ -696,7 +720,7 @@ class TruthValue {
 
 		double w = and(f2, c1, c2);
         double c = w2c(w, horizon);
-		return new TruthValue(cast(float)f1, c);
+		return new shared TruthValue(cast(float)f1, c);
 	}
 
 	private static double w2c(double w, double horizon) {
@@ -717,19 +741,19 @@ class TruthValue {
 	}
 }
 
-double calcExp(TruthValue tv) {
+double calcExp(shared TruthValue tv) {
 	return (tv.freq - 0.5) * /*strength*/tv.conf + /*offset to map to (0;1)*/0.5;
 }
 
 class Stamp {
 	// TODO OPTIMIZATION< allocate non-GC'ed memory >
-	public long[] trail;
+	public shared(long[]) trail;
 
-	public this(long[] trail) {
-		this.trail = trail;
+	public shared this(long[] trail) {
+		this.trail = cast(shared(long[]))trail;
 	}
 	
-	public static bool checkOverlap(Stamp a, Stamp b) {
+	public static bool checkOverlap(shared Stamp a, shared Stamp b) {
 		// TODO OPTIMIZATION< optimize for runtime >
 
 		bool[long] inA;
@@ -745,7 +769,7 @@ class Stamp {
 		return false;
 	}
 
-	public static Stamp merge(Stamp a, Stamp b) {
+	public static shared(Stamp) merge(shared Stamp a, shared Stamp b) {
 		long[] zipped = [];
 
         int ia = 0, ib = 0;
@@ -757,26 +781,25 @@ class Stamp {
         }
 
         // append remaining part of either stamp
-        zipped ~= a.trail[ia..$];
-        zipped ~= b.trail[ib..$];
+        zipped ~= (a.trail[ia..$] ~ b.trail[ib..$]);
 
         // limit length
         zipped = zipped[0..min(zipped.length, 100)]; // TODO< make parameter >
 
-        return new Stamp(zipped);
+        return new shared Stamp(zipped);
 	}
 
-	public final string convToStr() {
+	public final shared string convToStr() {
 		return to!string(trail);
 	}
 }
 
-class Sentence {
-	TruthValue truth;
-	Term term;
-	Stamp stamp;
+shared class Sentence {
+	shared TruthValue truth;
+	shared Term term;
+	shared Stamp stamp;
 
-	public final this(Term term, TruthValue truth, Stamp stamp) {
+	public final shared this(shared Term term, shared TruthValue truth, shared Stamp stamp) {
 		this.term = term;
 		this.truth = truth;
 		this.stamp = stamp;
@@ -784,28 +807,28 @@ class Sentence {
 }
 
 class Concept {
-	public Term name;
+	public shared Term name;
 
-	public ExpPriorityTable beliefs;
+	public shared ExpPriorityTable beliefs;
 
-	public final this(Term name, int numberOfBeliefs) {
+	public final shared this(shared Term name, int numberOfBeliefs) {
 		this.name = name;
-		this.beliefs = new ExpPriorityTable(numberOfBeliefs);
+		this.beliefs = new shared ExpPriorityTable(numberOfBeliefs);
 	}
 }
 
-void updateBelief(Concept concept, Sentence belief) {
+void updateBelief(shared Concept concept, shared Sentence belief) {
 	bool debugVerbose = false;
 
 	if(debugVerbose)  writeln("updatedBelief ENTRY");
 
-	void addBeliefToConcept(Concept concept, Sentence belief) {
+	void addBeliefToConcept(shared Concept concept, shared Sentence belief) {
 		concept.beliefs.insertByExp(belief);
 		concept.beliefs.limitSize();
 	}
 
 	for(int beliefIdx=0;beliefIdx<concept.beliefs.entries.length;beliefIdx++) {
-		Sentence iBelief = concept.beliefs.entries[beliefIdx];
+		shared Sentence iBelief = concept.beliefs.entries[beliefIdx];
 
 		if (isSameRec(iBelief.term, belief.term)) {
 			if(Stamp.checkOverlap(iBelief.stamp, belief.stamp)) {
@@ -826,7 +849,7 @@ void updateBelief(Concept concept, Sentence belief) {
 				writeln("   merged stamp = " ~ to!string(mergedStamp.trail));
 
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
-				auto revisedSentence = new Sentence(belief.term, revisedTruth, mergedStamp);
+				auto revisedSentence = new shared Sentence(belief.term, revisedTruth, mergedStamp);
 
 				concept.beliefs.entries[beliefIdx] = revisedSentence;
 
@@ -840,7 +863,7 @@ void updateBelief(Concept concept, Sentence belief) {
 }
 
 class Task {
-	public Sentence sentence;
+	public shared Sentence sentence;
 }
 
 
@@ -851,15 +874,15 @@ class Task {
 // term helpers
 
 // enumerate terms recursivly
-Term[] enumerateTermsRec(Term term) {
-	if (cast(BinaryTerm)term !is null) {
-		Binary binary = cast(Binary)term; // TODO< cast to binaryTerm and use methods to access children >
+shared(Term[]) enumerateTermsRec(shared Term term) {
+	if (cast(shared BinaryTerm)term !is null) {
+		auto binary = cast(shared Binary)term; // TODO< cast to binaryTerm and use methods to access children >
 
-		Term[] enumSubj = enumerateTermsRec(binary.subject);
-		Term[] enumPred = enumerateTermsRec(binary.predicate);
+		shared(Term[]) enumSubj = enumerateTermsRec(binary.subject);
+		shared(Term[]) enumPred = enumerateTermsRec(binary.predicate);
 		return [term] ~ enumSubj ~ enumPred;
 	}
-	else if (cast(AtomicTerm)term !is null) {
+	else if (cast(shared AtomicTerm)term !is null) {
 		// we can't recurse into atomics
 		return [term];
 	}
@@ -869,7 +892,7 @@ Term[] enumerateTermsRec(Term term) {
 	}
 }
 
-bool isSameRec(Term a, Term b) {
+bool isSameRec(shared Term a, shared Term b) {
 	if (a == b) {
 		return true;
 	}
@@ -880,14 +903,14 @@ bool isSameRec(Term a, Term b) {
 
 	// fall back to recursive comparision
 
-	if (cast(AtomicTerm)a !is null && cast(AtomicTerm)b !is null) {
-		auto a2 = cast(AtomicTerm)a;
-		auto b2 = cast(AtomicTerm)b;
+	if (cast(shared AtomicTerm)a !is null && cast(shared AtomicTerm)b !is null) {
+		auto a2 = cast(shared AtomicTerm)a;
+		auto b2 = cast(shared AtomicTerm)b;
 		return a2.name == b2.name;
 	}
-	else if(cast(Binary)a !is null && cast(Binary)b !is null) {
-		auto a2 = cast(Binary)a;
-		auto b2 = cast(Binary)b;
+	else if(cast(shared Binary)a !is null && cast(shared Binary)b !is null) {
+		auto a2 = cast(shared Binary)a;
+		auto b2 = cast(shared Binary)b;
 		
 		if (a2.copula != b2.copula) {
 			return false;
@@ -898,12 +921,12 @@ bool isSameRec(Term a, Term b) {
 	return false;
 }
 
-string convToStrRec(Term term) {
-	if (cast(AtomicTerm)term) {
-		return (cast(AtomicTerm)term).name;
+string convToStrRec(shared Term term) {
+	if (cast(shared AtomicTerm)term) {
+		return (cast(shared AtomicTerm)term).name;
 	}
-	else if (cast(Binary)term) {
-		auto binary = cast(Binary)term;
+	else if (cast(shared Binary)term) {
+		auto binary = cast(shared Binary)term;
 		return "<" ~ convToStrRec(binary.subject) ~ binary.copula ~ convToStrRec(binary.predicate) ~ ">";
 	}
 	else {
@@ -922,12 +945,12 @@ string convToStrRec(Term term) {
 
 // a table is like a bag in Open-NARS, just with different policies for prioritization and attention
 class ConceptTable {
-	private Concept[] concepts;
+	private shared(Concept)[] concepts;
 
 	// concepts by hashes of names
-	private Concept[][long] conceptsByNameHash;
+	private shared(Concept)[][long] conceptsByNameHash;
 
-	public final bool hasConceptByName(Term name) {
+	public final shared bool hasConceptByName(shared Term name) {
 		long hashOfName = name.retHash();
 
 		if (!(hashOfName in conceptsByNameHash)) {
@@ -935,7 +958,7 @@ class ConceptTable {
 		}
 
 		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
-		foreach(Concept iConcept; listOfPotentialConcepts) {
+		foreach(shared Concept iConcept; listOfPotentialConcepts) {
 			if (isSameRec(iConcept.name, name)) {
 				return true;
 			}
@@ -944,13 +967,13 @@ class ConceptTable {
 		return false;
 	}
 
-	public final Concept retConceptByName(Term name) {
+	public shared final shared(Concept) retConceptByName(shared Term name) {
 		// TODO< must be ensure >
 		assert(hasConceptByName(name));
 
 		long hashOfName = name.retHash();
 		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName];
-		foreach(Concept iConcept; listOfPotentialConcepts) {
+		foreach(shared Concept iConcept; listOfPotentialConcepts) {
 			if (isSameRec(iConcept.name, name)) {
 				return iConcept;
 			}
@@ -960,7 +983,7 @@ class ConceptTable {
 	}
 
 	// does not check if the concept already exists!
-	public final void insertConcept(Concept concept) {
+	public shared final void insertConcept(shared Concept concept) {
 		concepts ~= concept;
 
 		if (concept.name.retHash() in conceptsByNameHash) {
@@ -975,20 +998,22 @@ class ConceptTable {
 // ExpPriorityTable because it takes only the expectation into account for ranking
 class ExpPriorityTable {
 	// sorted by expectation
-	public Sentence[] entries;
+	public shared(Sentence)[] entries;
 
 	public int maxSize; // maximal size
 
-	public final this(int maxSize) {
+	public final shared this(int maxSize) {
 		this.maxSize = maxSize;
 	}
 
 	// doesn't limit size!
-	public void insertByExp(Sentence inserted) {
+	public shared void insertByExp(shared Sentence inserted) {
 		for(int idx=0;idx<entries.length;idx++) {
 			auto iElement = entries[idx];
 			if(iElement.truth.calcExp() < inserted.truth.calcExp()) {
-				entries.insertInPlace(idx, inserted);
+				auto arr = cast(Sentence[])entries; // HACK< needs some casting because the standard library doesn't define insertInPlace for shared Sentences ! >
+				arr.insertInPlace(idx, cast(Sentence)inserted);
+				entries = cast(shared(Sentence)[])arr;
 				return;
 			}
 		}
@@ -996,7 +1021,7 @@ class ExpPriorityTable {
 		entries ~= inserted;
 	}
 
-	public final void limitSize() {
+	public shared void limitSize() {
 		entries = entries[0..min(entries.length, maxSize)];
 	}
 }
@@ -1005,10 +1030,10 @@ class ExpPriorityTable {
 ////////////////////////////////
 // helpers
 
-Term[] sampleFromArray(Term[] arr, int numberOfSamples, ref Xorshift rng) {
-	Term[] sampledResult;
+shared(Term[]) sampleFromArray(shared(Term[]) arr, int numberOfSamples, ref Xorshift rng) {
+	shared(Term[]) sampledResult;
 
-	Term[] remainingTerms = arr[0..$];
+	auto remainingTerms = arr[0..$];
 
 	foreach(int iSample;0..numberOfSamples) {
 		if (remainingTerms.length == 0) {
@@ -1016,7 +1041,7 @@ Term[] sampleFromArray(Term[] arr, int numberOfSamples, ref Xorshift rng) {
 		}
 
 		long chosenIdx = uniform(0, remainingTerms.length, rng);
-		Term sampledTerm = remainingTerms[chosenIdx];
+		auto sampledTerm = remainingTerms[chosenIdx];
 		remainingTerms = remainingTerms.remove(chosenIdx);
 		sampledResult ~= sampledTerm;
 	}

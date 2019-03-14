@@ -167,11 +167,11 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     
     print "{"
-    print "    TrieElement te0 = new TrieElement(TrieElement.EnumType.CHECKCOPULA);"
+    print "    shared TrieElement te0 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
     print "    te0.side = EnumSide.LEFT;"
     print "    te0.checkedString = \""+escape(premiseACopula)+"\";"
     print "    "
-    print "    TrieElement te1 = new TrieElement(TrieElement.EnumType.CHECKCOPULA);"
+    print "    shared TrieElement te1 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
     print "    te1.side = EnumSide.RIGHT;"
     print "    te1.checkedString = \""+escape(premiseBCopula)+"\";"
     print "    te0.children ~= te1;"
@@ -180,13 +180,13 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     teCounter = 2
 
     for iSamePremiseTerms in samePremiseTerms: # need to iterate because there can be multiple terms which have to be the same
-        print "    TrieElement te"+str(teCounter)+" = new TrieElement(TrieElement.EnumType.WALKCOMPARE);"
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCOMPARE);"
         print "    te"+str(teCounter)+".pathLeft = "+ convertPathToDSrc( iSamePremiseTerms[0] ) +";" # print python list to D list
         print "    te"+str(teCounter)+".pathRight = "+ convertPathToDSrc( iSamePremiseTerms[1] ) +";" # print python list to D list
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
         print "    "
     
-    print "    TrieElement teX = new TrieElement(TrieElement.EnumType.EXEC);"
+    print "    shared TrieElement teX = new shared TrieElement(TrieElement.EnumType.EXEC);"
     print "    teX.fp = &derive"+str(staticFunctionCounter)+";"
     print "    te"+str(teCounter)+".children ~= teX;"
     print "    "
@@ -198,21 +198,21 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
 
-    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(Sentence aSentence, Sentence bSentence, ref Sentence[] resultSentences, TrieElement trieElement) {\n"
-    derivationFunctionsSrc+= "   Term a = aSentence.term;\n"
-    derivationFunctionsSrc+= "   Term b = bSentence.term;\n"
+    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(shared Sentence aSentence, shared Sentence bSentence, Sentences resultSentences, shared TrieElement trieElement) {\n"
+    derivationFunctionsSrc+= "   auto a = aSentence.term;\n"
+    derivationFunctionsSrc+= "   auto b = bSentence.term;\n"
     derivationFunctionsSrc+= "   \n"
-    derivationFunctionsSrc+= "   Term conclusionSubj = "+conclusionSubjCode+";\n"
-    derivationFunctionsSrc+= "   Term conclusionPred = "+conclusionPredCode+";\n"
+    derivationFunctionsSrc+= "   auto conclusionSubj = "+conclusionSubjCode+";\n"
+    derivationFunctionsSrc+= "   auto conclusionPred = "+conclusionPredCode+";\n"
 
     # TODO< do allow it the conclusion copula is not a real copula >
     derivationFunctionsSrc+= "   if(!isSameRec(conclusionSubj, conclusionPred)) { // conclusion with same subject and predicate are forbidden by NAL\n"    
 
-    derivationFunctionsSrc+= "      Binary conclusionTerm = new Binary(\""+escape(conclusionCopula)+"\", conclusionSubj, conclusionPred);\n"
+    derivationFunctionsSrc+= "      shared Binary conclusionTerm = new shared Binary(\""+escape(conclusionCopula)+"\", conclusionSubj, conclusionPred);\n"
 
-    derivationFunctionsSrc+= "      Stamp stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
-    derivationFunctionsSrc+= "      TruthValue tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
-    derivationFunctionsSrc+= "      resultSentences ~= new Sentence(conclusionTerm, tv, stamp);\n"
+    derivationFunctionsSrc+= "      auto stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
+    derivationFunctionsSrc+= "      auto tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
+    derivationFunctionsSrc+= "      resultSentences.arr ~= new shared Sentence(conclusionTerm, tv, stamp);\n"
     derivationFunctionsSrc+= "   }\n"
     derivationFunctionsSrc+= "}\n"
     derivationFunctionsSrc+= "\n"
@@ -236,7 +236,8 @@ CopulaTypes = [
 genCodeComplex = False
 
 print "// AUTOGEN: initializes and fills tries"
-print "void initTrie(ref TrieElement[] rootTries) {"
+print "shared(TrieElement)[] initTrie() {"
+print "   shared(TrieElement)[] rootTries;"
 
 for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     (bFOL, OmitForHOL, ival, copAsymZ) = (copAsym == "-->", lambda str: str if bFOL else "", lambda str,t: str.replace("t",t), copAsym.replace("t","z"))
@@ -347,6 +348,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
                     if genCodeComplex:
                         gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     ("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
 
+print "  return rootTries;"
 print "}"
 print ""
 print ""
