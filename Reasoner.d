@@ -15,6 +15,9 @@
 // TODO< implement WALKCHECKCOPULA which walks and checks the copula >
 
 
+// LATER TODO< basic Q&A >
+// LATER TODO< basic attention mechanism >
+
 // LATER TODO< add rules for detachment to metaGen.py >
 // LATER TODO< metaGen.py : generate backward inference rules >
 // LATER TODO< add a lot of the missing rules to metaGen.py >
@@ -23,7 +26,6 @@
 
 
 // LATER TODO< variable unifier >
-// LATER TODO< basic Q&A >
 // LATER TODO< backward inference >
 
 
@@ -120,71 +122,7 @@ void main() {
 	writeln("test derivation");
 
 
-	Sentence[] derivedSentences;
-	{ // select task and process it with selected concepts
-		Task selectedTask;
-		{ // select random task for processing
-			long chosenTaskIndex = uniform(0, reasoner.mem.workingMemory.activeTasks.length, reasoner.rng);
-			selectedTask = reasoner.mem.workingMemory.activeTasks[chosenTaskIndex];
-		}
-
-		// do test inference and look at the result (s)
-
-		
-		{ // pick random n concepts of the enumerated subterms of testtask and do inference for them
-			Term[] termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
-
-			int numberOfSampledTerms = 5;
-			// sample terms from termAndSubtermsOfSentenceOfTask
-			Term[] sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, reasoner.rng);
-			
-			{ // do inference for the concepts named by sampledTerms
-				foreach(Term iSampledTerm; sampledTerms) {
-					if (!reasoner.mem.concepts.hasConceptByName(iSampledTerm)) {
-						continue;
-					}
-
-					auto selectedConcept = reasoner.mem.concepts.retConceptByName(iSampledTerm);
-
-					writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
-					derivedSentences ~= reasoner.mem.infer(selectedTask, selectedConcept, reasoner.deriver);
-				}
-			}
-		}
-	}
-
-	{ // debug
-		writeln("derived sentences#=", derivedSentences.length);
-
-		foreach(Sentence iDerivedSentence; derivedSentences) {
-			// TODO< convert Sentence to string and print >
-			writeln("derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
-		}
-	}
-
-	{ // put derived results into concepts
-		foreach(Sentence iDerivedSentence; derivedSentences) {
-			reasoner.mem.conceptualize(iDerivedSentence.term);
-
-			// WORKAROUND< for now we just add it to the beliefs >
-			// TODO< must be done for every term and subterm of iDerivedSentence.term >
-			auto concept = reasoner.mem.concepts.retConceptByName(iDerivedSentence.term);
-			updateBelief(concept, iDerivedSentence);
-		}
-	}
-
-	{ // TODO ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value >
-		// WORKAROUND< we just add the conclusions as tasks >
-		foreach(Sentence iDerivedSentence; derivedSentences) {
-			Task task = new Task();
-			task.sentence = iDerivedSentence;
-
-			// TODO< don't add if it is known by stamp !!! >
-
-			reasoner.mem.workingMemory.activeTasks ~= task;
-		}
-
-	}
+	reasoner.singleCycle();
 
 
 	} // TEST REASONING LOOP
@@ -312,7 +250,77 @@ class Reasoner {
 	public void init() {
 		deriver.init();
 	}
+
+	public void singleCycle() {
+		Sentence[] derivedSentences;
+		
+		{ // select task and process it with selected concepts
+			Task selectedTask;
+			{ // select random task for processing
+				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng);
+				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex];
+			}
+
+			// do test inference and look at the result (s)
+
+			
+			{ // pick random n concepts of the enumerated subterms of testtask and do inference for them
+				Term[] termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
+
+				int numberOfSampledTerms = 5;
+				// sample terms from termAndSubtermsOfSentenceOfTask
+				Term[] sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng);
+				
+				{ // do inference for the concepts named by sampledTerms
+					foreach(Term iSampledTerm; sampledTerms) {
+						if (!mem.concepts.hasConceptByName(iSampledTerm)) {
+							continue;
+						}
+
+						auto selectedConcept = mem.concepts.retConceptByName(iSampledTerm);
+
+						writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
+						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver);
+					}
+				}
+			}
+		}
+
+		{ // debug
+			writeln("derived sentences#=", derivedSentences.length);
+
+			foreach(Sentence iDerivedSentence; derivedSentences) {
+				// TODO< convert Sentence to string and print >
+				writeln("derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+			}
+		}
+
+		{ // put derived results into concepts
+			foreach(Sentence iDerivedSentence; derivedSentences) {
+				mem.conceptualize(iDerivedSentence.term);
+
+				// WORKAROUND< for now we just add it to the beliefs >
+				// TODO< must be done for every term and subterm of iDerivedSentence.term >
+				auto concept = mem.concepts.retConceptByName(iDerivedSentence.term);
+				updateBelief(concept, iDerivedSentence);
+			}
+		}
+
+		{ // TODO ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value >
+			// WORKAROUND< we just add the conclusions as tasks >
+			foreach(Sentence iDerivedSentence; derivedSentences) {
+				Task task = new Task();
+				task.sentence = iDerivedSentence;
+
+				// TODO< don't add if it is known by stamp !!! >
+
+				mem.workingMemory.activeTasks ~= task;
+			}
+		}
+	}
 }
+
+
 
 class TrieDeriver {
 	// tries which are the roots and are iterated independently
