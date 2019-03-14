@@ -1,7 +1,12 @@
 
 # Non-Axiomatic Logic generation
 
+# TODO< swizzle subject and predicate  when the copula is symetric >
 # TODO< implement sets >
+
+# TODO< fix bug, see mail-list  ---- "   I think I found another bug in rules like this:"       >
+
+emitExecCode = True # do we emit executable code?
 
 staticFunctionCounter = 0
 
@@ -146,6 +151,10 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     # TODO< print desire >
     print "// ("+str(premiseASubj)+" "+premiseACopula+" "+str(premiseAPred)+"), ("+str(premiseBSubj)+" "+premiseBCopula+" "+str(premiseBPred)+")   |-   ("+str(conclusionSubj)+" "+conclusionCopula+" "+str(conclusionPred)+")\t\t(Truth:"+truth+intervalProjection+")"
     
+    global emitExecCode
+    if not emitExecCode:
+        return # if we don't emit the code and just the inference rules with comments
+
     # TODO< implement truth computation for time delta with projection >
 
     # build trie
@@ -183,6 +192,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     print "    "
     print "    rootTries ~= te0;"
     print "}"
+    print "\n"
 
     teCounter+=1
 
