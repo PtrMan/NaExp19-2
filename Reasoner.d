@@ -243,14 +243,19 @@ shared class TaskWithAttention {
 	}
 }
 
-// commented because not yet used
-// TODO< call it in belief update function after handling Q&A >
-/*
 // called when ever a belief of the concept changes
 void attentionHandleBeliefUpdate(shared Concept concept, shared Sentence updatedBelief) {
-	// TODO< compute average exp of all beliefs and update cached value in Concept >
+	// assert  concept.beliefs.entries.length > 0 // there must be at least one updated belief
+
+	// compute average exp of all beliefs and update cached value in Concept
+
+	double expSum = 0;
+	foreach(shared Sentence iBelief; concept.beliefs.entries) {
+		expSum += iBelief.truth.calcExp();
+	}
+	
+	concept.cachedAverageExp = expSum / concept.beliefs.entries.length;
 }
-*/
 
 
 
@@ -1085,6 +1090,8 @@ class Concept {
 	// pending Question directly asked about the term named by name
 	public shared(Question)[] questions;
 
+	public double cachedAverageExp = 0; // used for attention (see attention implementation)
+
 	public shared this(shared Term name, int numberOfBeliefs) {
 		this.name = name;
 		this.beliefs = new shared ExpPriorityTable(numberOfBeliefs);
@@ -1135,6 +1142,9 @@ void handleQuestionAnswering(shared Concept concept, shared Sentence potentialAn
 void beliefWasUpdatedOrAdded(shared Concept concept, shared Sentence belief) {
 	// Q&A handling - we have to do it here
 	handleQuestionAnswering(concept, belief);
+
+	// we need to update the attention related values
+	attentionHandleBeliefUpdate(concept, belief);
 }
 
 void updateBelief(shared Concept concept, shared Sentence belief) {
