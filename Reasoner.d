@@ -33,6 +33,8 @@
 // LATER TODO< variable unifier >
 // LATER TODO< backward inference >
 
+// TODO LATER MAYBE< disallow derivations  of the same component if it is set-like     ex: <d|d> >
+
 
 
 // LATER TODO< decision making :( >
@@ -114,20 +116,39 @@ void main() {
 	*/
 
 
-	foreach(long i;0..200) {  // TEST REASONING LOOP
 
-
-
-	
 	{
-		shared Term term = new shared Binary("<->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
-		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		auto sentence = new shared Sentence(term, tv, stamp);
+		foreach(string iCopula; ["<->", "==>", "<|>", "=/>"]) {
 
-		auto task = new shared Task();
-		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+			auto termNames = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+			for(int i=0;i<termNames.length-1;i++) {
+				auto termName0 = termNames[i];
+				auto termName1 = termNames[i+1];
+
+				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
+				auto tv = new shared TruthValue(1.0f, 0.9f);
+				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+				auto sentence = new shared Sentence(term, tv, stamp);
+
+				auto task = new shared Task();
+				task.sentence = sentence;
+				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+			}
+
+			for(int i=0;i<termNames.length-1;i++) {
+				auto termName0 = termNames[i];
+				auto termName1 = termNames[i+1];
+
+				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
+				auto tv = new shared TruthValue(1.0f, 0.9f);
+				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+				auto beliefSentence = new shared Sentence(term, tv, stamp);
+
+				reasoner.mem.conceptualize(beliefSentence.term);
+				reasoner.mem.addBeliefToConcepts(beliefSentence);
+			}
+		}
 	}
 
 
@@ -159,11 +180,38 @@ void main() {
 
 
 
+		/*
+	{
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence(term, tv, stamp);
+
+		auto task = new shared Task();
+		task.sentence = sentence;
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+	}
+	*/
+
+
+	foreach(long i;0..50000) {  // TEST REASONING LOOP
+
+
+
+	
+
+
+
 	reasoner.singleCycle();
 
 
 	} // TEST REASONING LOOP
 }
+
+
+////////////////////////////////
+////////////////////////////////
+// Attention
 
 /**
  * working memory implements some functionality of attention
@@ -192,6 +240,17 @@ shared class TaskWithAttention {
 	}
 }
 
+// commented because not yet used
+// TODO< call it in belief update function after handling Q&A >
+/*
+// called when ever a belief of the concept changes
+void attentionHandleBeliefUpdate(shared Concept concept, shared Sentence updatedBelief) {
+	// TODO< compute average exp of all beliefs and update cached value in Concept >
+}
+*/
+
+
+
 // exponential moving average
 // see for explaination https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp
 struct Ema {
@@ -203,6 +262,11 @@ struct Ema {
 		return ema;
 	}
 }
+
+
+///////////////////////////////
+///////////////////////////////
+//
 
 
 shared class Memory {
@@ -242,7 +306,7 @@ shared class Memory {
 		long beliefIdx = uniform(0, cast(int)c.beliefs.entries.length, rng2);
 		rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 
-		writeln("Memory.infer() selectedBeliefIdx=", beliefIdx, " of ", c.beliefs.entries.length);
+		//writeln("Memory.infer() selectedBeliefIdx=", beliefIdx, " of ", c.beliefs.entries.length);  // for debugging problems with rng
 
 		auto selectedBelief = c.beliefs.entries[beliefIdx];
 
@@ -368,7 +432,7 @@ shared class Reasoner {
 	}
 
 	public void singleCycle() {
-		bool debugVerbose = true;
+		bool debugVerbose = false;
 
 		if (debugVerbose)  writeln("singleCycle() ENTRY");
 		scope(exit)  if (debugVerbose)  writeln("singleCycle() EXIT");
@@ -442,10 +506,21 @@ shared class Reasoner {
 				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
 			}
 		}
+
+		{ // debug notices after cycle
+			writeln("#concepts=" ~ to!string(mem.concepts.retSize()));
+		}
 	}
 }
 
 
+
+
+
+// wrapper for multiple sentences to pass around in a shared context
+class Sentences {
+	public shared(Sentence)[] arr;
+}
 
 class TrieDeriver {
 	// tries which are the roots and are iterated independently
@@ -462,11 +537,6 @@ class TrieDeriver {
 			interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences);
 		}
 	}
-}
-
-// wrapper for multiple sentences to pass around in a shared context
-class Sentences {
-	public shared(Sentence)[] arr;
 }
 
 class TrieElement {
@@ -1052,7 +1122,7 @@ void beliefWasUpdatedOrAdded(shared Concept concept, shared Sentence belief) {
 void updateBelief(shared Concept concept, shared Sentence belief) {
 	bool debugVerbose = true;
 
-	if(debugVerbose)  writeln("updatedBelief ENTRY");
+	//if(debugVerbose)  writeln("updatedBelief ENTRY");
 
 	void addBeliefToConcept(shared Concept concept, shared Sentence belief) {
 		concept.beliefs.insertByExp(belief);
@@ -1242,6 +1312,10 @@ class ConceptTable {
 		else {
 			conceptsByNameHash[concept.name.retHash()] = new shared Concepts([concept]);
 		}
+	}
+
+	public shared long retSize() {
+		return cast(long)concepts.length;
 	}
 }
 
