@@ -94,10 +94,8 @@ void main() {
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
-	// TODO< implement reasoning loop >
 
-
-	foreach(long i;0..1000) {  // TEST REASONING LOOP
+	foreach(long i;0..3000) {  // TEST REASONING LOOP
 
 
 
