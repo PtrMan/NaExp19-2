@@ -51,25 +51,12 @@ void main() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		
-		writeln("DEBG Z");
-
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		
-		writeln("DEBG afterStamp");
-
 		auto beliefSentence = new shared Sentence(term, tv, stamp);
-		writeln("DEBU fgvfvfd");
-
 
 		reasoner.mem.conceptualize(beliefSentence.term);
-
-		writeln("DEBU f");
-
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
-
-	writeln("DEBU 3");
 
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("c"), new shared AtomicTerm("d"));
@@ -110,8 +97,6 @@ void main() {
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
-
-	writeln("DEB 2");
 
 	// TODO< implement reasoning loop >
 
@@ -263,8 +248,6 @@ shared class Memory {
 
 		// conceptualizes by selected term recursivly
 		void conceptualizeByTermRec(shared Term term) {
-			writeln("C 2");
-
 			if(debugVerbose)   writeln("conceptualize: called for term=" ~ convToStrRec(term));
 
 			if(!concepts.hasConceptByName(term)) {
@@ -294,8 +277,6 @@ shared class Memory {
 				}
 			}
 		}
-
-		writeln("C 1");
 
 		conceptualizeByTermRec(term);
 	}
@@ -1021,8 +1002,6 @@ class ConceptTable {
 
 	// does not check if the concept already exists!
 	public shared final void insertConcept(shared Concept concept) {
-		writeln("DBG Y");
-
 		concepts ~= concept;
 
 		if (concept.name.retHash() in conceptsByNameHash) {
@@ -1031,8 +1010,6 @@ class ConceptTable {
 		else {
 			conceptsByNameHash[concept.name.retHash()] = new shared Concepts([concept]);
 		}
-
-		writeln("DBG X");
 	}
 }
 
