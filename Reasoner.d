@@ -556,11 +556,21 @@ bool interpretTrieRec(
 
 		// function which checks if the expected compound term or binary term is present
 		bool checkCompoundOrBinary(shared Term term, string comparedCompoundType) {
+			bool isStoredAsBinary = // do we need to handle it as a binary,        this is a simplification
+				comparedCompoundType == "-" ||
+				comparedCompoundType == "~" ||
+				comparedCompoundType == "|" ||
+				comparedCompoundType == "||" ||
+				comparedCompoundType == "&" ||
+				comparedCompoundType == "&&" ||
+				comparedCompoundType == "&/" ||
+				comparedCompoundType == "&|";
+
 			if (comparedCompoundType == "*") { // product expected
 				// TODO< implement special handling for product
 				throw new Exception("TODO - not implemented");
 			}
-			else if (comparedCompoundType == "-" || comparedCompoundType == "~" || comparedCompoundType == "|" || comparedCompoundType == "||" || comparedCompoundType == "&" || comparedCompoundType == "&&") { // handling for binary
+			else if (isStoredAsBinary) { // handling for binary
 				// must be binary
 				auto binary = cast(shared Binary)term;
 				if (binary is null) { // must be binary

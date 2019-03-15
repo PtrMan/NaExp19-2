@@ -178,10 +178,10 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
                 
                 if compoundType == "*":
                     raise TODO() # generation for the code of products is not implemented!
-                elif compoundType in ["|", "||", "&", "&&", "-", "~"]: # fall back to generation of binary
+                elif compoundType in ["|", "||", "&", "&&", "&/", "&|", "-", "~"]: # fall back to generation of binary
                     return "new shared Binary(\"" + compoundType + "\"," + codeName0 + "," + codeName1 + ")" 
                 else:
-                    raise Exception() # not implemented or internal error
+                    raise Exception(compoundType) # not implemented or internal error
 
                 raise TODO()
                 # TODO< code return handling >
@@ -362,40 +362,40 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     # TODO< implement inference generation function to generate code which accepts only one argument >
     #print "(A "+copAsym+" B)\t\t\t\t\t|-\t(B "+ival(copAsym,"-t")+" A)\t\t(Truth:Conversion)"
     
-    if False:
+    if True:
         #print "(A "+copAsym+" B),\t(B "+copAsymZ+" C)\t\t\t|-\t(A "+ival(copAsym,"t+z")+" C)\t\t(Truth:deduction"+OmitForHOL(", Desire:Strong")+")"
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"), ("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     
     copAsymHasTimeOffset = "/" in copAsym or "\\" in copAsym
     IntervalProjection = "WithIntervalProjection(t,z)" if copAsymHasTimeOffset else ""
     
-    if False: # block
+    if True: # block
         gen(("A", copAsym, "B"),   ("C", copAsymZ, "B"),    ("A", copAsym, "C"),   ("induction", IntervalProjection), OmitForHOL("weak"))
         
-    if False: # block
+    if True: # block
         gen(("A", copAsym, "B"),   ("A", copAsymZ, "C"),  ("B", copAsym, "C"), ("abduction", IntervalProjection), OmitForHOL("strong"))
 
 
     if copSym != None:
         copSymZ = copSym.replace("t","z")
         
-        if False:
+        if True:
             #print "(A "+copSym+" B),\t(B "+copSymZ+" C)\t\t\t|-\t(A "+ival(copSym,"t+z")+" C)\t\t(Truth:resemblance"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copSym,"B"),("B",copSymZ,"C"),  ("A",ival(copSym,"t+z"),"C"),  ("resemblance", ""), OmitForHOL("strong"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copAsym+" C)\t\t(Truth:analogy"+IntervalProjection+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"B"),  ("A",copAsym,"C"),   ("analogy", IntervalProjection), OmitForHOL("strong"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" A)\t\t\t|-\t(C "+ival(copSym,"t+z")+" B)\t\t(Truth:analogy"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"A"),   ("C",ival(copSym,"t+z"),"B"),  ("analogy", ""), OmitForHOL("strong"))
         
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copSym+" C)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("C", copSymZ, "B"),   ("A",copSym,"C"), ("comparison", IntervalProjection), OmitForHOL("weak"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(A "+copSymZ+" C)\t\t\t|-\t(C "+copSym+" B)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("A",copSymZ,"C"), ("C",copSym,"B"), ("comparison", IntervalProjection), OmitForHOL("weak"))
     
@@ -430,8 +430,6 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
             if True:
                 gen(("A",cop,"B"),("C",copZ,"B"),   ((MinusCops[1],"A","C"),cop,"B"),    ("difference", ""), "")
                 gen(("A",cop,"B"),("A",copZ,"C"),   ("B",cop,(MinusCops[0],"A","C")),    ("difference", ""), "")
-            
-            if False:
                 gen(("S",cop,"M"),((MinusCops[1],"S","P"),copZ,"B"),   ("P",cop,"M"),   ("decomposePNP", ""), "")
                 gen(("S",cop,"M"),((MinusCops[1],"P","S"),copZ,"B"),   ("P",cop,"M"),   ("decomposeNNN", ""), "")
                 gen(("M",cop,"S"),("M",copZ,(MinusCops[0],"S","P")),   ("M",cop,"P"),   ("decomposePNP", ""), "")            
@@ -453,18 +451,18 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
                         # commented because it only consumes a single premise on the left side! - we haven't implemented this case
                         #print "A,\t\t((" + junc + " A C) "+copZ+" B)\t\t|-\t(C "+ copZ + " B)\t\t(Truth:Deduction"+(tParam.replace("-","+") if copAsymHasTimeOffset else "")+")"
 
-                    if genCodeComplex:
+                    if True:
                         #print "(A "+cop+" B),\t(C "+copZ+" B)\t\t\t|-\t((" + junc + " A C) "+ cop + " B) \t" + TruthSet1 + IntervalProjection+")"
                         gen(("A",cop,"B"),("C",copZ,"B"),   ((junc,"A", "C"), cop, "B"),  (TruthSet1, IntervalProjection), "")
 
-                    if genCodeComplex:
+                    if True:
                         #print "(A "+cop+" B),\t(A "+copZ+" C)\t\t\t|-\t(A "+ cop + " (" + junc + " B C)) \t"  + TruthSet2 + IntervalProjection+")"
                         gen(("A",cop,"B"),("A",copZ,"C"),   ("A",cop,(junc,"B", "C")),  (TruthSet2, IntervalProjection), "")
 
-                    if False:
+                    if True:
                         gen(("S",cop,"M"),((junc,"S", "L"),copZ,"M"),    ("L",cop,"M"),   (TruthDecomp1, IntervalProjection), "")
                     
-                    if False:
+                    if True:
                         gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     ("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
 
 print "  return rootTries;"
