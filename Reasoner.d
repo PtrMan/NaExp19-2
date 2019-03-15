@@ -242,6 +242,10 @@ shared class Memory {
 
 		Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
 		long beliefIdx = uniform(0, cast(int)c.beliefs.entries.length, rng2);
+		rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
+
+		writeln("Memory.infer() selectedBeliefIdx=", beliefIdx, " of ", c.beliefs.entries.length);
+
 		auto selectedBelief = c.beliefs.entries[beliefIdx];
 
 		if (Stamp.checkOverlap(t.sentence.stamp, selectedBelief.stamp)) {
@@ -353,6 +357,7 @@ shared class Reasoner {
 			{ // select random task for processing
 				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
 				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng2);
+				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex].task;
 			}
 
@@ -366,6 +371,7 @@ shared class Reasoner {
 				// sample terms from termAndSubtermsOfSentenceOfTask
 				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
 				auto sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng2);
+				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 				
 				{ // do inference for the concepts named by sampledTerms
 					foreach(shared Term iSampledTerm; sampledTerms) {
