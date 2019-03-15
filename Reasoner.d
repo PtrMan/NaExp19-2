@@ -1,10 +1,7 @@
-// TODO< refactor < put functions to query if a belief exists to public function               of concept > >
-
-
-
-
-
 // LATER TODO< basic Q&A >
+
+// LATER TODO< limit # of concepts >
+
 // LATER TODO< basic attention mechanism >
 
 // TODO< implement  construction of compounds (class is ProdStar)  ex:   ("*", "A", "B")  >
@@ -943,6 +940,15 @@ class Concept {
 	}
 }
 
+// called when ever a new belief was updated or added
+// we have to do Q&A here
+// /param concept host concept
+// /param belief added or updated belief
+void beliefWasUpdatedOrAdded(shared Concept concept, shared Sentence belief) {
+	// Q&A handling
+	// TODO< implement Q&A >
+}
+
 void updateBelief(shared Concept concept, shared Sentence belief) {
 	bool debugVerbose = true;
 
@@ -951,6 +957,9 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 	void addBeliefToConcept(shared Concept concept, shared Sentence belief) {
 		concept.beliefs.insertByExp(belief);
 		concept.beliefs.limitSize();
+
+		// TODO< handle case when it was not inserted - then it was also not added and we don't need to call this function >
+		beliefWasUpdatedOrAdded(concept, belief);
 	}
 
 	for(int beliefIdx=0;beliefIdx<concept.beliefs.entries.length;beliefIdx++) {
@@ -962,6 +971,8 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 				if (belief.truth.conf > iBelief.truth.conf) {
 					// BUG TODO< remove at index and add belief to the table
 					concept.beliefs.entries[beliefIdx] = belief;
+
+					beliefWasUpdatedOrAdded(concept, belief);
 					return;
 				}
 				return;
@@ -975,9 +986,11 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 				writeln("   merged stamp = " ~ to!string(mergedStamp.trail));
 
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
-				auto revisedSentence = new shared Sentence(belief.term, revisedTruth, mergedStamp);
+				auto revisedBelief = new shared Sentence(belief.term, revisedTruth, mergedStamp);
 
-				concept.beliefs.entries[beliefIdx] = revisedSentence;
+				concept.beliefs.entries[beliefIdx] = revisedBelief;
+
+				beliefWasUpdatedOrAdded(concept, revisedBelief);
 
 				return;
 			}
