@@ -1,3 +1,7 @@
+// TODO< implement  construction of binary  ex:   ("A",cop,(junc,"B", "C"))  >
+
+
+
 // TODO< refactor < put functions to update belief of single concept to public function        of concept> >
 // TODO< refactor < put functions to query if a belief exists to public function               of concept > >
 
@@ -7,13 +11,11 @@
 
 // TODO< implement truth value for union, intersection and decomposition >
 
-// TODO< implement WALKCHECKCOMPOUND which walks and checks the copula >
-
 
 // LATER TODO< basic Q&A >
 // LATER TODO< basic attention mechanism >
 
-// TODO< implement  construction of compounds (class is ProdStar)  ex:   ("A",cop,(junc,"B", "C"))  >
+// TODO< implement  construction of compounds (class is ProdStar)  ex:   ("*", "A", "B")  >
 
 
 // LATER TODO< add rules for products to metaGen.py >
@@ -786,6 +788,47 @@ class TruthValue {
 			double c = w2c(w, horizon);
 			return new shared TruthValue(cast(float)f, c);
 		}
+		else if(function_ == "union") {
+			double f = or(f1, f2);
+        	double c = and(c1, c2);
+			return new shared TruthValue(cast(float)f, c);
+		}
+		else if(function_ == "intersection") {
+			double f = and(f1, f2);
+        	double c = and(c1, c2);
+			return new shared TruthValue(f, c);
+		}
+		else if("decomposePNP") {
+			// see https://github.com/jarradh/narjure/blob/master/src/nal/truth_value.clj#L94-L99
+			double f2n = not(f2),
+			       f = and(f1, f2n),
+			       c = and(f, c1, c2);
+			return new shared TruthValue(f, c);
+		}
+		else if("decomposeNNN") {
+			// see https://github.com/jarradh/narjure/blob/master/src/nal/truth_value.clj#L101-L108
+			double f1n = not(f1),
+			       f2n = not(f2),
+			       fn = and(f1n, f2n),
+			       f = not(fn),
+			       c = and(fn, c1, c2);
+			return new shared TruthValue(f, c);
+		}
+		else if("decomposeNPP") {
+			// see https://github.com/jarradh/narjure/blob/master/src/nal/truth_value.clj#L87-L92
+			double f1n = not(f1),
+			       f = and(f1n, f2),
+			       c = and(f, c1, c2);
+			return new shared TruthValue(f, c);
+		}
+		else if("decomposePNN") {
+			// see https://github.com/jarradh/narjure/blob/master/src/nal/truth_value.clj#L79-L85
+			double f2n = not(f2),
+			       fn = and(f1, f2n),
+			       f = not(fn),
+			       c = and(fn, c1, c2);
+			return new shared TruthValue(f, c);
+		}
 		// TODO< implement other truth functions >
 
 		throw new Exception("Unimplemented truth function name=" ~ function_);
@@ -817,6 +860,9 @@ class TruthValue {
 	}
 	private static double and(double a, double b, double c) {
 		return a*b*c;
+	}
+	private static double not(double v) {
+		return 1.0-v;
 	}
 }
 
