@@ -1,10 +1,17 @@
+// TODO< store avergate truth exp of beliefs of concept in concept!>
+// TODO< update average truth exp of beliefs of concept when a belief is updated >
+// TODO< limit # of concepts >
+
+// TODO< add punctation to sentence >
+// TODO< add constructor to sentence >
+
 // TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
 
 
-// LATER TODO< basic Q&A >
+// LATER TODO< unification for Q&A >
 
-// LATER TODO< limit # of concepts >
 
+// TODO REFACTOR< implement function which handles the recursive call of some delegate >
 
 // LATER TODO< basic attention mechanism >
 
@@ -13,11 +20,13 @@
 
 // LATER TODO< add rules for products to metaGen.py >
 
+// TODO< make term immutable >
+
 
 // LATER TODO< add rules for detachment to metaGen.py >
 // LATER TODO< metaGen.py : generate backward inference rules >
 // LATER TODO< add a lot of the missing rules to metaGen.py >
-// LATER TODO< sets >
+// LATER TODO< add sets to terms and recursive handling >
 // LATER TODO< add inference rules for sets to metaGen.py >
 
 
@@ -65,6 +74,14 @@ void main() {
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
 
+	{ // add test question
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("d"));
+
+		reasoner.mem.conceptualize(term);
+		reasoner.mem.addQuestionToConcepts(term);
+	}
+
+	/*
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("e"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
@@ -94,9 +111,10 @@ void main() {
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
 	}
+	*/
 
 
-	foreach(long i;0..3000) {  // TEST REASONING LOOP
+	foreach(long i;0..200) {  // TEST REASONING LOOP
 
 
 
@@ -239,7 +257,7 @@ shared class Memory {
 
 	// creates concepts if necessary and puts the belief into all relevant concepts 
 	public final void conceptualize(shared Term term) {
-		bool debugVerbose = true;
+		bool debugVerbose = false;
 
 		// conceptualizes by selected term recursivly
 		void conceptualizeByTermRec(shared Term term) {
@@ -277,6 +295,34 @@ shared class Memory {
 	}
 }
 
+// adds the question to the concepts (if it doesn't already exist)
+public final void addQuestionToConcepts(shared Memory mem, shared Term questionTerm) {
+	// selects term recursivly
+	void addQuestionRec(shared Term name) {
+		// TODO< enable when debuging   >  assert concepts.hasConceptByName(term)
+
+		auto concept = mem.concepts.retConceptByName(name);
+		addQuestionIfNecessary(concept, questionTerm);
+
+		{ // call recursivly
+			if (cast(shared BinaryTerm)name !is null) {
+				shared Binary binary = cast(shared Binary)name; // TODO< cast to binaryTerm and use methods to access children >
+
+				addQuestionRec(binary.subject);
+				addQuestionRec(binary.predicate);
+			}
+			else if (cast(shared AtomicTerm)name !is null) {
+				// we can't recurse into atomics
+			}
+			else {
+				// TODO< call function which throws an exception in debug mode >
+				throw new Exception("conceptualize(): unhandled case!");
+			}
+		}
+	}
+
+	addQuestionRec(questionTerm);
+}
 
 // adds the belief to the concepts
 public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief) {
@@ -937,6 +983,10 @@ class Question {
 	shared Term questionTerm; // the term of the question itself
 
 	shared Sentence bestAnswer = null; // null when no best answer was found
+
+	public shared this(shared Term questionTerm) {
+		this.questionTerm = questionTerm;
+	}
 }
 
 class Concept {
@@ -947,12 +997,27 @@ class Concept {
 	// pending Question directly asked about the term named by name
 	public shared(Question)[] questions;
 
-	public final shared this(shared Term name, int numberOfBeliefs) {
+	public shared this(shared Term name, int numberOfBeliefs) {
 		this.name = name;
 		this.beliefs = new shared ExpPriorityTable(numberOfBeliefs);
 	}
 }
 
+
+// adds the question to the concept when necessary
+public final void addQuestionIfNecessary(shared Concept concept, shared Term questionTerm) {
+	// search for existing questions
+	foreach(shared Question iQuestion; concept.questions) {
+		if (isSameRec(iQuestion.questionTerm, questionTerm)) {
+			return; // we ignore the question if we already know the question
+		}
+	}
+
+	auto createdQuestion = new shared Question(questionTerm);
+	concept.questions ~= createdQuestion;
+
+	// TODO AIKR< limit number of questions >
+}
 
 // called when ever Q&A needs to be handled or updated
 // /param potentialAnswer belief which may be a potential answer to a question inside the concept
