@@ -5,10 +5,10 @@
 
 
 
+// TODO< implement truth value for union, intersection and decomposition >
+// TODO< implement  construction of compounds (class is ProdStar)  ex:   ("A",cop,(junc,"B", "C"))  >
 
-
-
-// TODO< implement WALKCHECKCOPULA which walks and checks the copula >
+// TODO< implement WALKCHECKCOMPOUND which walks and checks the copula >
 
 
 // LATER TODO< basic Q&A >
@@ -452,6 +452,8 @@ class TrieElement {
 
 		WALKCOMPARE, // walk left and compare with walk right
 
+		WALKCHECKCOMPOUND, // walk and check the type of a compound
+
 		EXEC, // trie element to run some code with a function
 	}
 }
@@ -545,6 +547,11 @@ bool interpretTrieRec(
 		if (leftElement is null || rightElement is null || !isSameRec(leftElement, rightElement)) {
 			return true; // abort if walk failed or if the walked elements don't match up
 		}
+	}
+	else if(trieElement.type == TrieElement.EnumType.WALKCHECKCOMPOUND) {
+		// TODO TODO TODO TODO< implement >
+
+		throw new Exception("TODO - not implemented");
 	}
 
 	// we need to iterate children if we are here

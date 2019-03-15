@@ -4,7 +4,9 @@
 # TODO< swizzle subject and predicate  when the copula is symetric >
 # TODO< implement sets >
 
-# TODO< fix bug, see mail-list  ---- "   I think I found another bug in rules like this:"       >
+# helper
+def isPlaceholder(string):
+    return len(string) == 1 and string.istitle()
 
 emitExecCode = True # do we emit executable code?
 
@@ -87,17 +89,36 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
     if not isinstance(premiseBSubj, tuple):
         pathsPremiseB[premiseBSubj] = ["b.subject"]
     else:
-        pathsPremiseB[premiseBSubj[1]] = ["b.subject", 0]
-        pathsPremiseB[premiseBSubj[2]] = ["b.subject", 1]
+        if True: #isPlaceholder(premiseBSubj[0]):
+            pathsPremiseB[premiseBSubj[1]] = ["b.subject", 0]
+            pathsPremiseB[premiseBSubj[2]] = ["b.subject", 1]
+        else:
+            # special handling for compounds
+
+            # NOT COMMENTED< because it will be useful for products and images and other compounds >
+
+            pathsPremiseB[premiseBSubj[1]] = ["b.subject", "idx0"] # index indicates array access
+            pathsPremiseB[premiseBSubj[2]] = ["b.subject", "idx1"] # index indicates array access
 
     if not isinstance(premiseBPred, tuple):
         pathsPremiseB[premiseBPred] = ["b.predicate"]
     else:
-        pathsPremiseB[premiseBPred[1]] = ["b.predicate", 0]
-        pathsPremiseB[premiseBPred[2]] = ["b.predicate", 1]
+        if True: #isPlaceholder(premiseBPred[0]):
+            pathsPremiseB[premiseBPred[1]] = ["b.predicate", 0]
+            pathsPremiseB[premiseBPred[2]] = ["b.predicate", 1]
+        else:
+            # special handling for compounds
+
+            # NOT COMMENTED< because it will be useful for products and images and other compounds >
+
+            pathsPremiseB[premiseBPred[1]] = ["b.predicate", "idx0"] # index indicates array access
+            pathsPremiseB[premiseBPred[2]] = ["b.predicate", "idx1"] # index indicates array access
+
+
 
 
     def retCode(obj):
+
         def retCodeOfVar(name):
             resList = None
 
@@ -120,9 +141,13 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
                 if resList[1] == 0:
-                    code += ".subject"
+                    code = "(cast(Binary)("+ code +"))" + ".subject"
                 elif resList[1] == 1:
-                    code += ".predicate"
+                    code = "(cast(Binary)("+ code +"))" + ".predicate"
+                #if resList[1] == "idx0": # special handling for compound access
+                #    code += ".TODO[0]"
+                #elif resList[1] == "idx1":
+                #    code += ".TODO[1]" # special handling for compound access
                 else:
                     raise Exception("not implemented!")
 
@@ -194,16 +219,86 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     teCounter = 2
 
+    if not isPlaceholder(premiseA[0]):
+        raise NotImplemented()
+        """ commented because not used by rules and thus not tested
+        comparedCompoundType = premiseA[0][0]
+
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
+        
+
+        print "    te"+str(teCounter)+".pathLeft = [\"0\"];" # print python list to D list
+        print "    te"+str(teCounter)+".pathRight = [];"
+        print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
+        
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+
+        teCounter+=1
+        """
+
+    if not isPlaceholder(premiseA[2]):
+        raise NotImplemented()
+        """
+        comparedCompoundType = premiseA[2][0]
+
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
+        
+
+        print "    te"+str(teCounter)+".pathLeft = [\"1\"];" # print python list to D list
+        print "    te"+str(teCounter)+".pathRight = [];"
+        print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
+        
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+
+        teCounter+=1
+        """
+    
+
+    if not isPlaceholder(premiseB[0]):
+        comparedCompoundType = premiseB[0][0]
+
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
+        
+
+        print "    te"+str(teCounter)+".pathLeft = [];" # print python list to D list
+        print "    te"+str(teCounter)+".pathRight = [\"0\"];"
+        print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
+        
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+
+        teCounter+=1
+
+    if not isPlaceholder(premiseB[2]):
+        comparedCompoundType = premiseB[2][0]
+
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
+        
+
+        print "    te"+str(teCounter)+".pathLeft = [];" # print python list to D list
+        print "    te"+str(teCounter)+".pathRight = [\"1\"];"
+        print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
+        
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+
+        teCounter+=1
+    
+
+
     for iSamePremiseTerms in samePremiseTerms: # need to iterate because there can be multiple terms which have to be the same
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCOMPARE);"
         print "    te"+str(teCounter)+".pathLeft = "+ convertPathToDSrc( iSamePremiseTerms[0] ) +";" # print python list to D list
         print "    te"+str(teCounter)+".pathRight = "+ convertPathToDSrc( iSamePremiseTerms[1] ) +";" # print python list to D list
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
         print "    "
+        teCounter+=1
     
     print "    shared TrieElement teX = new shared TrieElement(TrieElement.EnumType.EXEC);"
     print "    teX.fp = &derive"+str(staticFunctionCounter)+";"
-    print "    te"+str(teCounter)+".children ~= teX;"
+    print "    te"+str(teCounter-1)+".children ~= teX;"
     print "    "
     print "    rootTries ~= te0;"
     print "}"
@@ -240,11 +335,11 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
-    ["-->","<->",[["&"],"|",["-","~"]]], #
+    ["-->","<->",[["&"],"|",["-","~"]]],
     ["==>","<=>",[["&&"],"||",None]], #
-    #["=/>(t)","</>(t)",[["&/(t)","&|"],"||",None]],
+    #["=/>(t)","</>(t)",[["&/(t)","&|"],"||",None]], ##
     ["=|>","<|>",[["&/","&|"],"||",None]], #
-    #["=\>(t)",None ,[["&/","&|"],"||",None]] #
+    #["=\>(t)",None ,[["&/","&|"],"||",None]] ##
 ]
 
 # generate code for already implemented conversions?
@@ -328,6 +423,8 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
             if genCodeComplex:
                 gen(("A",cop,"B"),("C",copZ,"B"),   ((MinusCops[1],"A","C"),cop,"B"),    ("difference", ""), "")
                 gen(("A",cop,"B"),("A",copZ,"C"),   ("B",cop,(MinusCops[0],"A","C")),    ("difference", ""), "")
+            
+            if True:
                 gen(("S",cop,"M"),((MinusCops[1],"S","P"),copZ,"B"),   ("P",cop,"M"),   ("decomposePNP", ""), "")
                 gen(("S",cop,"M"),((MinusCops[1],"P","S"),copZ,"B"),   ("P",cop,"M"),   ("decomposeNNN", ""), "")
                 gen(("M",cop,"S"),("M",copZ,(MinusCops[0],"S","P")),   ("M",cop,"P"),   ("decomposePNP", ""), "")            
@@ -357,10 +454,10 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
                         #print "(A "+cop+" B),\t(A "+copZ+" C)\t\t\t|-\t(A "+ cop + " (" + junc + " B C)) \t"  + TruthSet2 + IntervalProjection+")"
                         gen(("A",cop,"B"),("A",copZ,"C"),   ("A",cop,(junc,"B", "C")),  (TruthSet2, IntervalProjection), "")
 
-                    if genCodeComplex:
+                    if True:
                         gen(("S",cop,"M"),((junc,"S", "L"),copZ,"M"),    ("L",cop,"M"),   (TruthDecomp1, IntervalProjection), "")
                     
-                    if genCodeComplex:
+                    if True:
                         gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     ("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
 
 print "  return rootTries;"
@@ -369,10 +466,4 @@ print ""
 print ""
 
 print derivationFunctionsSrc
-
-
-# helper
-def isPlaceholder(string):
-    return len(string) == 1 and string.istitle()
-
 
