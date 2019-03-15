@@ -620,7 +620,7 @@ bool interpretTrieRec(
 		}
 		else {} // ignore
 
-		throw new Exception("TODO - not implemented");
+		// fall through because we want to walk children
 	}
 
 	// we need to iterate children if we are here
