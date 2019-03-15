@@ -9,9 +9,6 @@
 
 
 
-// TODO< implement truth value for union, intersection and decomposition >
-
-
 // LATER TODO< basic Q&A >
 // LATER TODO< basic attention mechanism >
 
