@@ -955,8 +955,25 @@ class Concept {
 
 
 // called when ever Q&A needs to be handled or updated
-void handleQuestionAnswering(shared Concept concept, shared Sentence belief) {
-	// TODO< implement
+// /param potentialAnswer belief which may be a potential answer to a question inside the concept
+void handleQuestionAnswering(shared Concept concept, shared Sentence potentialAnswer) {
+	foreach(shared Question iQuestion; concept.questions) {
+		// TODO< try to unify variables of question with potential answer >
+		bool isAnwer = isSameRec(potentialAnswer.term, iQuestion.questionTerm); // can only be an answer if question and the term of the potential answer unifies
+		if (!isAnwer) {
+			continue;
+		}
+
+		// is only a better answer if it is the first answer or one with higher truth-expectation
+		bool isBetterAnswer = iQuestion.bestAnswer is null || calcExp(potentialAnswer.truth) > calcExp(iQuestion.bestAnswer.truth);
+		if (!isBetterAnswer) {
+			continue;
+		}
+
+		iQuestion.bestAnswer = potentialAnswer;
+
+		writeln("found better answer question=" ~ convToStrRec(iQuestion.questionTerm) ~ " answer=" ~ convToStrRec(potentialAnswer.term));
+	}
 }
 
 // called when ever a new belief was updated or added
