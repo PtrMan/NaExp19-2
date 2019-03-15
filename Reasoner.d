@@ -2,6 +2,8 @@
 
 // LATER TODO< limit # of concepts >
 
+// LATER TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
+
 // LATER TODO< basic attention mechanism >
 
 // TODO< implement  construction of compounds (class is ProdStar)  ex:   ("*", "A", "B")  >
@@ -969,8 +971,9 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 			if(Stamp.checkOverlap(iBelief.stamp, belief.stamp)) {
 				// choice rule for beliefs
 				if (belief.truth.conf > iBelief.truth.conf) {
-					// BUG TODO< remove at index and add belief to the table
-					concept.beliefs.entries[beliefIdx] = belief;
+					// we need to remove and add it because the exp() changed and thus the ordering
+					concept.beliefs.entries = concept.beliefs.entries.remove(beliefIdx);
+					addBeliefToConcept(concept, belief);
 
 					beliefWasUpdatedOrAdded(concept, belief);
 					return;
