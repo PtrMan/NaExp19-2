@@ -1,7 +1,3 @@
-// TODO< implement  construction of binary  ex:   ("A",cop,(junc,"B", "C"))  >
-
-
-
 // TODO< refactor < put functions to update belief of single concept to public function        of concept> >
 // TODO< refactor < put functions to query if a belief exists to public function               of concept > >
 
