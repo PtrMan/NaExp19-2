@@ -132,12 +132,27 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
         if isinstance(obj, tuple):
-            (nameCopula, name0, name1) = obj # structure of conclusion term is encoded as tuple
+            (a, b, c) = obj
 
-            codeName0 = retCodeOfVar(name0)
-            codeName1 = retCodeOfVar(name1)
-            
-            return "new Binary(\"" + nameCopula + "\"," + codeName0 + "," + codeName1 + ")"
+            if isPlaceholder(a):
+                # normal handling for statement
+
+                (nameCopula, name0, name1) = obj # structure of conclusion term is encoded as tuple
+
+                codeName0 = retCodeOfVar(name0)
+                codeName1 = retCodeOfVar(name1)
+                
+                return "new Binary(\"" + nameCopula + "\"," + codeName0 + "," + codeName1 + ")"
+            else:
+                # special handling for compound
+
+                (name0, compoundType, name1) = obj
+
+                codeName0 = retCodeOfVar(name0)
+                codeName1 = retCodeOfVar(name1)
+                
+                raise TODO()
+                # TODO< code return handling >
         else:
             return retCodeOfVar(obj)
 
@@ -354,3 +369,10 @@ print ""
 print ""
 
 print derivationFunctionsSrc
+
+
+# helper
+def isPlaceholder(string):
+    return len(string) == 1 and string.istitle()
+
+
