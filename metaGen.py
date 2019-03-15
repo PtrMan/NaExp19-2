@@ -227,7 +227,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
         
 
-        print "    te"+str(teCounter)+".pathLeft = [\"0\"];" # print python list to D list
+        print "    te"+str(teCounter)+".pathLeft = [\"a.subject\"];" # print python list to D list
         print "    te"+str(teCounter)+".pathRight = [];"
         print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
         
@@ -245,7 +245,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
         
 
-        print "    te"+str(teCounter)+".pathLeft = [\"1\"];" # print python list to D list
+        print "    te"+str(teCounter)+".pathLeft = [\"a.predicate\"];" # print python list to D list
         print "    te"+str(teCounter)+".pathRight = [];"
         print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
         
@@ -263,7 +263,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         
 
         print "    te"+str(teCounter)+".pathLeft = [];" # print python list to D list
-        print "    te"+str(teCounter)+".pathRight = [\"0\"];"
+        print "    te"+str(teCounter)+".pathRight = [\"b.subject\"];"
         print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
         
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
@@ -278,7 +278,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         
 
         print "    te"+str(teCounter)+".pathLeft = [];" # print python list to D list
-        print "    te"+str(teCounter)+".pathRight = [\"1\"];"
+        print "    te"+str(teCounter)+".pathRight = [\"b.predicate\"];"
         print "    te"+str(teCounter)+".checkedString = \"" + comparedCompoundType + "\";"
         
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"

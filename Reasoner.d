@@ -6,13 +6,15 @@
 
 
 // TODO< implement truth value for union, intersection and decomposition >
-// TODO< implement  construction of compounds (class is ProdStar)  ex:   ("A",cop,(junc,"B", "C"))  >
 
 // TODO< implement WALKCHECKCOMPOUND which walks and checks the copula >
 
 
 // LATER TODO< basic Q&A >
 // LATER TODO< basic attention mechanism >
+
+// TODO< implement  construction of compounds (class is ProdStar)  ex:   ("A",cop,(junc,"B", "C"))  >
+
 
 // LATER TODO< add rules for products to metaGen.py >
 
@@ -473,6 +475,8 @@ bool interpretTrieRec(
 	shared Term left = leftSentence.term;
 	shared Term right = rightSentence.term;
 
+	// returns null if it didn't find it
+	// TODO< refactor to recursive function which cuts down the path >
 	shared(Term) walk(shared(string[]) path) {
 		shared(Term) walkToBinarySubject(shared Term root) {
 			return cast(shared Binary)root !is null ? (cast(shared Binary)root).subject : null;
@@ -512,7 +516,7 @@ bool interpretTrieRec(
 
 
 	if (trieElement.type == TrieElement.EnumType.CHECKCOPULA) {
-		if(debugVerbose) writeln("interpretTrieRec checkcopula");
+		if(debugVerbose) writeln("interpretTrieRec CHECKCOPULA");
 
 		if (trieElement.side == EnumSide.LEFT) {
 			Binary b = cast(Binary)left;
@@ -534,12 +538,12 @@ bool interpretTrieRec(
 		}
 	}
 	else if(trieElement.type == TrieElement.EnumType.EXEC) {
-		if(debugVerbose) writeln("interpretTrieRec exec");
+		if(debugVerbose) writeln("interpretTrieRec EXEC");
 
 		trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
-		if(debugVerbose) writeln("interpretTrieRec walkCompare");
+		if(debugVerbose) writeln("interpretTrieRec WALKCOMPARE");
 
 		auto leftElement = walk(trieElement.pathLeft);
 		auto rightElement = walk(trieElement.pathRight);
@@ -549,7 +553,67 @@ bool interpretTrieRec(
 		}
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCHECKCOMPOUND) {
-		// TODO TODO TODO TODO< implement >
+		if(debugVerbose) writeln("interpretTrieRec WALKCHECKCOMPOUND");
+
+		// function which checks if the expected compound term or binary term is present
+		bool checkCompoundOrBinary(shared Term term, string comparedCompoundType) {
+			if (comparedCompoundType == "*") { // product expected
+				// TODO< implement special handling for product
+				throw new Exception("TODO - not implemented");
+			}
+			else if (comparedCompoundType == "-" || comparedCompoundType == "~" || comparedCompoundType == "|" || comparedCompoundType == "||" || comparedCompoundType == "&" || comparedCompoundType == "&&") { // handling for binary
+				// must be binary
+				auto binary = cast(shared Binary)term;
+				if (binary is null) { // must be binary
+					return false; // return failure because it found a not expected term
+				}
+
+				if (binary.copula != comparedCompoundType) { // binary must be of expected type
+					return false;
+				}
+
+				return true;
+			}
+			else { // not implemented case
+				throw new Exception("debug - ignorable internal error (checkCompoundOrBinary) for compound/binary=" ~ comparedCompoundType); // either not implemented or 
+
+				return false; // we must return because it did not match
+			}
+		}
+
+		if (trieElement.pathLeft.length == 0) { // walk right
+			auto path = trieElement.pathRight;
+			auto walkedTerm = walk(path);
+
+			if (walkedTerm is null) { // doesn't the expected term exist?
+				return false; // return failure if so
+			}
+
+			string comparedCompoundType = trieElement.checkedString;
+
+			if (!checkCompoundOrBinary(walkedTerm, comparedCompoundType)) {
+				return false; // propage failure
+			}
+			
+			// fall through because we want to walk children
+		}
+		else if(trieElement.pathRight.length == 0) { // walk left
+			auto path = trieElement.pathLeft;
+			auto walkedTerm = walk(path);
+
+			if (walkedTerm is null) { // doesn't the expected term exist?
+				return false; // return failure if so
+			}
+
+			string comparedCompoundType = trieElement.checkedString;
+
+			if (!checkCompoundOrBinary(walkedTerm, comparedCompoundType)) {
+				return false; // propage failure
+			}
+			
+			// fall through because we want to walk children
+		}
+		else {} // ignore
 
 		throw new Exception("TODO - not implemented");
 	}
