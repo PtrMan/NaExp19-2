@@ -116,7 +116,7 @@ void main() {
 	// TODO< implement reasoning loop >
 
 
-	foreach(long i;0..200) {  // TEST REASONING LOOP
+	foreach(long i;0..10) {  // TEST REASONING LOOP
 
 
 
@@ -329,10 +329,12 @@ shared class Memory {
 shared class Reasoner {
 	public Xorshift rng = Xorshift(12);
 
-	shared Memory mem = new shared Memory();
+	shared Memory mem;
 	TrieDeriver deriver = new TrieDeriver();
 
-	public this() {}
+	public this() {
+		mem = new shared Memory();
+	}
 
 	public void init() {
 		deriver.init();
@@ -475,7 +477,7 @@ bool interpretTrieRec(
 	shared Sentence rightSentence,
 	Sentences resultSentences
 ) {
-	bool debugVerbose = true;
+	bool debugVerbose = false;
 
 	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
@@ -982,26 +984,13 @@ class ConceptTable {
 	public final shared bool hasConceptByName(shared Term name) {
 		long hashOfName = name.retHash();
 
-		writeln("DBG E");
-
-		writeln(conceptsByNameHash.length);
-
-		writeln("DBG E2");
-
-		if ((hashOfName in conceptsByNameHash) !is null) {
-			writeln("DBG E1");
+		if ((hashOfName in conceptsByNameHash) is null) {
 			return false;
 		}
 
-		writeln("DBG G");
-
 		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName].arr;
 		foreach(shared Concept iConcept; listOfPotentialConcepts) {
-					writeln("DBG N");
-
 			if (isSameRec(iConcept.name, name)) {
-						writeln("DBG M");
-
 				return true;
 			}
 		}
