@@ -1,4 +1,3 @@
-// TODO< refactor < put functions to update belief of single concept to public function        of concept> >
 // TODO< refactor < put functions to query if a belief exists to public function               of concept > >
 
 
@@ -98,7 +97,7 @@ void main() {
 	// TODO< implement reasoning loop >
 
 
-	foreach(long i;0..10) {  // TEST REASONING LOOP
+	foreach(long i;0..1000) {  // TEST REASONING LOOP
 
 
 
@@ -277,35 +276,36 @@ shared class Memory {
 
 		conceptualizeByTermRec(term);
 	}
+}
 
-	// adds the belief to the concepts
-	public final void addBeliefToConcepts(shared Sentence belief) {
-		// selects term recursivly
-		void addBeliefRec(shared Term name) {
-			// TODO< enable when debuging   >  assert concepts.hasConceptByName(term)
 
-			auto concept = concepts.retConceptByName(name);
-			updateBelief(concept, belief);
+// adds the belief to the concepts
+public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief) {
+	// selects term recursivly
+	void addBeliefRec(shared Term name) {
+		// TODO< enable when debuging   >  assert concepts.hasConceptByName(term)
 
-			{ // call recursivly
-				if (cast(shared BinaryTerm)name !is null) {
-					shared Binary binary = cast(shared Binary)name; // TODO< cast to binaryTerm and use methods to access children >
+		auto concept = mem.concepts.retConceptByName(name);
+		updateBelief(concept, belief);
 
-					addBeliefRec(binary.subject);
-					addBeliefRec(binary.predicate);
-				}
-				else if (cast(shared AtomicTerm)name !is null) {
-					// we can't recurse into atomics
-				}
-				else {
-					// TODO< call function which throws an exception in debug mode >
-					throw new Exception("conceptualize(): unhandled case!");
-				}
+		{ // call recursivly
+			if (cast(shared BinaryTerm)name !is null) {
+				shared Binary binary = cast(shared Binary)name; // TODO< cast to binaryTerm and use methods to access children >
+
+				addBeliefRec(binary.subject);
+				addBeliefRec(binary.predicate);
+			}
+			else if (cast(shared AtomicTerm)name !is null) {
+				// we can't recurse into atomics
+			}
+			else {
+				// TODO< call function which throws an exception in debug mode >
+				throw new Exception("conceptualize(): unhandled case!");
 			}
 		}
-
-		addBeliefRec(belief.term);
 	}
+
+	addBeliefRec(belief.term);
 }
 
 shared class Reasoner {
