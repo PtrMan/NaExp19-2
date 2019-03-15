@@ -942,13 +942,18 @@ class Concept {
 	}
 }
 
+
+// called when ever Q&A needs to be handled or updated
+void handleQuestionAnswering(shared Concept concept, shared Sentence belief) {
+	// TODO< implement
+}
+
 // called when ever a new belief was updated or added
-// we have to do Q&A here
 // /param concept host concept
 // /param belief added or updated belief
 void beliefWasUpdatedOrAdded(shared Concept concept, shared Sentence belief) {
-	// Q&A handling
-	// TODO< implement Q&A >
+	// Q&A handling - we have to do it here
+	handleQuestionAnswering(concept, belief);
 }
 
 void updateBelief(shared Concept concept, shared Sentence belief) {
