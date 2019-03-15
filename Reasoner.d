@@ -1,6 +1,9 @@
 // TODO< store avergate truth exp of beliefs of concept in concept!>
 // TODO< update average truth exp of beliefs of concept when a belief is updated >
 // TODO< limit # of concepts >
+//       we need to sort the concepts by average truth exp of beliefs 
+
+
 
 // TODO< add punctation to sentence >
 // TODO< add constructor to sentence >
@@ -288,7 +291,8 @@ shared class Memory {
 	public final shared long retUniqueStampCounter() {
 		long result;
 		synchronized {
-			result = stampCounter++;
+			result = stampCounter;
+			core.atomic.atomicOp!"+="(this.stampCounter, 1);
 		}
 		return result;
 	}
@@ -423,6 +427,9 @@ shared class Reasoner {
 	shared Memory mem;
 	TrieDeriver deriver = new TrieDeriver();
 
+	long cycleCounter = 0;
+	long numberOfDerivationsCounter = 0;
+
 	public this() {
 		mem = new shared Memory();
 	}
@@ -478,9 +485,15 @@ shared class Reasoner {
 		{ // debug
 			if(false)   writeln("derived sentences#=", derivedSentences.length);
 
-			foreach(shared Sentence iDerivedSentence; derivedSentences) {
-				// TODO< convert Sentence to string and print >
-				writeln("   derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
+
+			bool showDerivations = false;
+
+			if (showDerivations) {
+				foreach(shared Sentence iDerivedSentence; derivedSentences) {
+					// TODO< convert Sentence to string and print >
+					writeln("   derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+				}
 			}
 		}
 
@@ -508,8 +521,13 @@ shared class Reasoner {
 		}
 
 		{ // debug notices after cycle
-			writeln("#concepts=" ~ to!string(mem.concepts.retSize()));
+			if ((cycleCounter % 100) == 0) {
+				writeln("#concepts=" ~ to!string(mem.concepts.retSize()) ~ "   #derivations=" ~ to!string(numberOfDerivationsCounter));
+			}
+
 		}
+
+		core.atomic.atomicOp!"+="(this.cycleCounter, 1);
 	}
 }
 
