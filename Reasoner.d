@@ -1,8 +1,10 @@
+// TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
+
+
 // LATER TODO< basic Q&A >
 
 // LATER TODO< limit # of concepts >
 
-// LATER TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
 
 // LATER TODO< basic attention mechanism >
 
@@ -931,10 +933,19 @@ shared class Sentence {
 	}
 }
 
+class Question {
+	shared Term questionTerm; // the term of the question itself
+
+	shared Sentence bestAnswer = null; // null when no best answer was found
+}
+
 class Concept {
 	public shared Term name;
 
 	public shared ExpPriorityTable beliefs;
+
+	// pending Question directly asked about the term named by name
+	public shared(Question)[] questions;
 
 	public final shared this(shared Term name, int numberOfBeliefs) {
 		this.name = name;
