@@ -4,8 +4,8 @@ python2 metaGen.py > autogen0.d
 
 cat Reasoner.d autogen0.d > tempBuild000.d
 
-#dmd -g tempBuild000.d
-~/dir/programs/ldc2-1.15.0-beta1-linux-x86_64/bin/ldc2 -O tempBuild000.d
+dmd -g tempBuild000.d
+#~/dir/programs/ldc2-1.15.0-beta1-linux-x86_64/bin/ldc2 -O tempBuild000.d
 
 #rm autogen0.d
 

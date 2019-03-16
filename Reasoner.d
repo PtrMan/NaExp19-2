@@ -1,3 +1,5 @@
+
+
 // TODO< derive question >
 // TODO< attention for tasks >
 //       we need to initialize the task with a start priority derived from the type of task (question, judgment) and premise priorities
@@ -5,6 +7,8 @@
 
 // TODO< deleted concepts have an average expectation of 0.0 - figure out why and fix it because it doesn't make any sense >
 
+
+// TODO< trie generation: check for unequality of vars when they appear on both sides >
 
 // TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
 
@@ -50,7 +54,47 @@ import std.conv;
 import core.sync.mutex;
 import core.atomic;
 
-void main() {	
+
+void main() {
+	// test0();
+	testQuestionDerivation0();
+}
+
+// tests if a question can be derived
+void testQuestionDerivation0() {
+	shared Reasoner reasoner = new shared Reasoner();
+	reasoner.init();
+
+	{ // add existing belief
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+	
+	{ // add question task
+		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
+		auto tv = null;
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence('?', term, tv, stamp);
+
+		auto task = new shared Task();
+		task.sentence = sentence;
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+	}
+
+
+	foreach(long i;0..100) {
+		reasoner.singleCycle();
+	}
+
+}
+
+// tests some complex interactions of the inference
+void test0() {	
 	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
 
@@ -196,7 +240,7 @@ void main() {
 	*/
 
 
-	foreach(long i;0..500000) {  // TEST REASONING LOOP
+	foreach(long i;0..100) {  // TEST REASONING LOOP
 
 
 
@@ -500,7 +544,7 @@ shared class Reasoner {
 	}
 
 	public void singleCycle() {
-		bool debugVerbose = false;
+		bool debugVerbose = true;
 
 		if (debugVerbose)  writeln("singleCycle() ENTRY");
 		scope(exit)  if (debugVerbose)  writeln("singleCycle() EXIT");
@@ -536,7 +580,7 @@ shared class Reasoner {
 
 						auto selectedConcept = mem.concepts.retConceptByName(iSampledTerm);
 
-						if(debugVerbose)   writeln("reasoning: infer for taskTerm=" ~ convToStrRec(selectedTask.sentence.term) ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
+						if(debugVerbose)   writeln("reasoning: infer for task.sentence=" ~ selectedTask.sentence.convToStr() ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
 						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver).arr;
 					}
 				}
@@ -544,16 +588,15 @@ shared class Reasoner {
 		}
 
 		{ // debug
-			if(false)   writeln("derived sentences#=", derivedSentences.length);
+			if(true)   writeln("derived sentences#=", derivedSentences.length);
 
 			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
 
-			bool showDerivations = false;
+			bool showDerivations = true;
 
 			if (showDerivations) {
 				foreach(shared Sentence iDerivedSentence; derivedSentences) {
-					// TODO< convert Sentence to string and print >
-					writeln("   derived ", convToStrRec(iDerivedSentence.term) ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+					writeln("   derived ", iDerivedSentence.convToStr() ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
 				}
 			}
 		}
@@ -562,10 +605,14 @@ shared class Reasoner {
 			foreach(shared Sentence iDerivedSentence; derivedSentences) {
 				mem.conceptualize(iDerivedSentence.term);
 
-				// WORKAROUND< for now we just add it to the beliefs >
-				// TODO< must be done for every term and subterm of iDerivedSentence.term >
-				auto concept = mem.concepts.retConceptByName(iDerivedSentence.term);
-				updateBelief(concept, iDerivedSentence);
+				if (iDerivedSentence.isJudgment()) {
+					// WORKAROUND< for now we just add it to the beliefs >
+					// TODO< must be done for every term and subterm of iDerivedSentence.term >
+					auto concept = mem.concepts.retConceptByName(iDerivedSentence.term);
+					updateBelief(concept, iDerivedSentence);
+				}
+
+				writeln("after conceptualize");
 			}
 		}
 
@@ -1075,10 +1122,10 @@ double calcExp(shared TruthValue tv) {
 
 class Stamp {
 	// TODO OPTIMIZATION< allocate non-GC'ed memory >
-	public shared(long[]) trail;
+	public immutable shared(long[]) trail;
 
 	public shared this(shared(long[]) trail) {
-		this.trail = trail;
+		this.trail = trail.idup;
 	}
 	
 	public static bool checkOverlap(shared Stamp a, shared Stamp b) {
@@ -1126,7 +1173,7 @@ shared class Sentence {
 	shared TruthValue truth; // can be null if question
 	shared Term term;
 	shared Stamp stamp;
-	public char punctation;
+	public immutable char punctation;
 
 	public final shared this(char punctation, shared Term term, shared TruthValue truth, shared Stamp stamp) {
 		this.punctation = punctation;
@@ -1136,15 +1183,19 @@ shared class Sentence {
 	}
 }
 
-bool isQuestion(shared Sentence sentence) {
-	return sentence.punctation == '?';
+bool isQuestion(shared Sentence sentence) { return sentence.punctation == '?'; }
+bool isJudgment(shared Sentence sentence) { return sentence.punctation == '.'; }
+
+
+string convToStr(shared Sentence sentence) {
+	string str = convToStrRec(sentence.term) ~ sentence.punctation;
+	if (sentence.truth !is null) {
+		str ~= " %" ~ to!string(sentence.truth.freq) ~ ";" ~ to!string(sentence.truth.conf) ~ "%";
+	}
+
+	return str;
 }
 
-/* commented because not used
-bool isJudgment(shared Sentence sentence) {
-	return sentence.punctation == '.';
-}
- */
 
 class Question {
 	shared Term questionTerm; // the term of the question itself
