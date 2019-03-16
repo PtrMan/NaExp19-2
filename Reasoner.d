@@ -1,9 +1,5 @@
-// TODO< store avergate truth exp of beliefs of concept in concept!>
-// TODO< update average truth exp of beliefs of concept when a belief is updated >
-// TODO< limit # of concepts >
-//       we need to sort the concepts by average truth exp of beliefs 
 
-
+// TODO< deleted concepts have an average expectation of 0.0 - figure out why and fix it because it doesn't make any sense >
 
 // TODO< add punctation to sentence >
 // TODO< add constructor to sentence >
@@ -47,6 +43,7 @@ import std.random;
 import std.stdio;
 import std.algorithm.mutation;
 import std.algorithm.comparison;
+import std.algorithm.sorting : sort;
 import std.conv;
 import core.sync.mutex;
 import core.atomic;
@@ -197,7 +194,7 @@ void main() {
 	*/
 
 
-	foreach(long i;0..50000) {  // TEST REASONING LOOP
+	foreach(long i;0..500000) {  // TEST REASONING LOOP
 
 
 
@@ -257,6 +254,62 @@ void attentionHandleBeliefUpdate(shared Concept concept, shared Sentence updated
 	concept.cachedAverageExp = expSum / concept.beliefs.entries.length;
 }
 
+// called when the system needs to remove superfluous concepts
+void attentionRemoveIrrelevantConcepts(shared Memory mem) {
+	if (mem.concepts.retSize() <= mem.maxNumberOfConcepts) {
+		return;
+	}
+
+	long numberOfConceptsToRemove = mem.concepts.retSize() - mem.maxNumberOfConcepts;
+
+	class RemoveConceptEntity {
+		public long conceptIdx;
+		public shared Concept concept;
+
+		public final this(shared Concept concept, long conceptIdx) {
+			this.concept = concept;
+			this.conceptIdx = conceptIdx;
+		}
+	}
+
+	RemoveConceptEntity[] candidates = []; // list of candidates for removal
+
+	// updates the candidates if necessary
+	void updateCandidates(shared Concept concept, long conceptIdx) {
+		candidates ~= new RemoveConceptEntity(concept, conceptIdx);
+		
+		// sort by averageExp of beliefs
+		candidates.sort!("a.concept.cachedAverageExp < b.concept.cachedAverageExp");
+
+		// remove entities which survived because they have a high enough exp
+
+		//writeln("#remove = ", numberOfConceptsToRemove);
+		//writeln("len = ", candidates.length);
+		//writeln("maxIdx = ", min(candidates.length, numberOfConceptsToRemove));
+
+		candidates = candidates[0..min(candidates.length, numberOfConceptsToRemove)];
+	}
+
+	for (long idx=0;idx<mem.concepts.retSize();idx++) {
+		auto iConcept = mem.concepts.retAt(idx);
+		updateCandidates(iConcept, idx);
+	}
+
+	{ // remove candidates
+		candidates.sort!("a.conceptIdx > b.conceptIdx");
+
+		if (candidates.length >= 2) {
+			assert(candidates[0].conceptIdx > candidates[1].conceptIdx); // make sure we sorted the right way
+		}
+
+		foreach(RemoveConceptEntity iCandidate; candidates) {
+			writeln("forgot concept term=", iCandidate.concept.name.convToStrRec(), " beliefs.avgExp=", iCandidate.concept.cachedAverageExp);
+
+			mem.concepts.removeAt(iCandidate.conceptIdx);
+		}
+	}
+}
+
 
 
 // exponential moving average
@@ -283,6 +336,7 @@ shared class Memory {
 	public Xorshift rng = Xorshift(24);
 
 	public int numberOfBeliefs = 100; // Reasoner parameter!
+	public long maxNumberOfConcepts = 3000; // Reasoner parameter!
 
 	private long stampCounter = 0;
 
@@ -522,6 +576,12 @@ shared class Reasoner {
 				// TODO< don't add if it is known by stamp !!! >
 
 				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+			}
+		}
+
+		{ // attention - we may need to remove concepts
+			if ((cycleCounter % 600) == 0) {
+				attentionRemoveIrrelevantConcepts(mem);
 			}
 		}
 
@@ -1344,6 +1404,14 @@ class ConceptTable {
 
 	public shared long retSize() {
 		return cast(long)concepts.length;
+	}
+
+	public shared shared(Concept) retAt(long idx) {
+		return concepts[idx];
+	}
+
+	public shared void removeAt(long idx) {
+		concepts = concepts.remove(idx);
 	}
 }
 
