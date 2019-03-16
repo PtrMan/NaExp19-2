@@ -520,7 +520,7 @@ shared class Reasoner {
 			{ // pick random n concepts of the enumerated subterms of testtask and do inference for them
 				auto termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
 
-				int numberOfSampledTerms = 5;
+				int numberOfSampledTerms = 7;
 				// sample terms from termAndSubtermsOfSentenceOfTask
 				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
 				auto sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng2);
@@ -586,8 +586,8 @@ shared class Reasoner {
 		}
 
 		{ // debug notices after cycle
-			if ((cycleCounter % 100) == 0) {
-				writeln("#concepts=" ~ to!string(mem.concepts.retSize()) ~ "   #derivations=" ~ to!string(numberOfDerivationsCounter));
+			if ((cycleCounter % 200) == 0) {
+				writeln("#cycle=", cycleCounter ,"   #concepts=" ~ to!string(mem.concepts.retSize()) ~ "   #derivations=" ~ to!string(numberOfDerivationsCounter));
 			}
 
 		}
