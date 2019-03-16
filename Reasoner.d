@@ -1,8 +1,10 @@
+// TODO< derive question >
+// TODO< attention for tasks >
+//       we need to initialize the task with a start priority derived from the type of task (question, judgment) and premise priorities
+
 
 // TODO< deleted concepts have an average expectation of 0.0 - figure out why and fix it because it doesn't make any sense >
 
-// TODO< add punctation to sentence >
-// TODO< add constructor to sentence >
 
 // TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
 
@@ -60,7 +62,7 @@ void main() {
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		auto beliefSentence = new shared Sentence(term, tv, stamp);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
@@ -70,7 +72,7 @@ void main() {
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("c"), new shared AtomicTerm("d"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		auto beliefSentence = new shared Sentence(term, tv, stamp);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
 		reasoner.mem.addBeliefToConcepts(beliefSentence);
@@ -129,7 +131,7 @@ void main() {
 				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
 				auto tv = new shared TruthValue(1.0f, 0.9f);
 				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-				auto sentence = new shared Sentence(term, tv, stamp);
+				auto sentence = new shared Sentence('.', term, tv, stamp);
 
 				auto task = new shared Task();
 				task.sentence = sentence;
@@ -143,7 +145,7 @@ void main() {
 				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
 				auto tv = new shared TruthValue(1.0f, 0.9f);
 				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-				auto beliefSentence = new shared Sentence(term, tv, stamp);
+				auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 				reasoner.mem.conceptualize(beliefSentence.term);
 				reasoner.mem.addBeliefToConcepts(beliefSentence);
@@ -157,7 +159,7 @@ void main() {
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		auto sentence = new shared Sentence(term, tv, stamp);
+		auto sentence = new shared Sentence('.', term, tv, stamp);
 
 		auto task = new shared Task();
 		task.sentence = sentence;
@@ -170,7 +172,7 @@ void main() {
 		shared Term term = new shared Binary("<=>", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
 		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
-		auto sentence = new shared Sentence(term, tv, stamp);
+		auto sentence = new shared Sentence('.', term, tv, stamp);
 
 		auto task = new shared Task();
 		task.sentence = sentence;
@@ -1121,16 +1123,28 @@ class Stamp {
 }
 
 shared class Sentence {
-	shared TruthValue truth;
+	shared TruthValue truth; // can be null if question
 	shared Term term;
 	shared Stamp stamp;
+	public char punctation;
 
-	public final shared this(shared Term term, shared TruthValue truth, shared Stamp stamp) {
+	public final shared this(char punctation, shared Term term, shared TruthValue truth, shared Stamp stamp) {
+		this.punctation = punctation;
 		this.term = term;
 		this.truth = truth;
 		this.stamp = stamp;
 	}
 }
+
+bool isQuestion(shared Sentence sentence) {
+	return sentence.punctation == '?';
+}
+
+/* commented because not used
+bool isJudgment(shared Sentence sentence) {
+	return sentence.punctation == '.';
+}
+ */
 
 class Question {
 	shared Term questionTerm; // the term of the question itself
@@ -1245,7 +1259,7 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 				writeln("   merged stamp = " ~ to!string(mergedStamp.trail));
 
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
-				auto revisedBelief = new shared Sentence(belief.term, revisedTruth, mergedStamp);
+				auto revisedBelief = new shared Sentence('.', belief.term, revisedTruth, mergedStamp);
 
 				concept.beliefs.entries[beliefIdx] = revisedBelief;
 

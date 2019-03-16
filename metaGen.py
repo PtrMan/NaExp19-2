@@ -316,6 +316,16 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
     derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(shared Sentence aSentence, shared Sentence bSentence, Sentences resultSentences, shared TrieElement trieElement) {\n"
+    derivationFunctionsSrc+= "   assert(!(aSentence.isQuestion() && bSentence.isQuestion()), \"Invalid derivation : question-question\");\n"
+    derivationFunctionsSrc+= "   \n"
+    derivationFunctionsSrc+= "   char derivationPunctation = aSentence.punctation;\n"
+    derivationFunctionsSrc+= "   if (aSentence.isQuestion()) {\n"
+    derivationFunctionsSrc+= "       derivationPunctation = bSentence.punctation;\n"
+    derivationFunctionsSrc+= "   }\n"
+    derivationFunctionsSrc+= "   if (bSentence.isQuestion()) {\n"
+    derivationFunctionsSrc+= "       derivationPunctation = aSentence.punctation;\n"
+    derivationFunctionsSrc+= "   }\n"
+    derivationFunctionsSrc+= "   \n"
     derivationFunctionsSrc+= "   auto a = aSentence.term;\n"
     derivationFunctionsSrc+= "   auto b = bSentence.term;\n"
     derivationFunctionsSrc+= "   \n"
@@ -329,7 +339,7 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     derivationFunctionsSrc+= "      auto stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
     derivationFunctionsSrc+= "      auto tv = TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth);\n"
-    derivationFunctionsSrc+= "      resultSentences.arr ~= new shared Sentence(conclusionTerm, tv, stamp);\n"
+    derivationFunctionsSrc+= "      resultSentences.arr ~= new shared Sentence(derivationPunctation, conclusionTerm, tv, stamp);\n"
     derivationFunctionsSrc+= "   }\n"
     derivationFunctionsSrc+= "}\n"
     derivationFunctionsSrc+= "\n"
