@@ -35,6 +35,9 @@
 // LATER TODO< add inference rules for sets to metaGen.py >
 
 
+// BUG< concept removal: we need to remove the concept from the dict by hash of the name >
+
+
 // LATER TODO< variable unifier >
 // LATER TODO< backward inference >
 
@@ -316,9 +319,6 @@ shared class TaskWithAttention {
 		double conf = task.sentence.isQuestion() ? questionVirtualConfidenceValue : task.sentence.truth.conf;
 
 		double ranking = conf;
-
-		writeln("age ", age);
-		writeln("pw ", pow(agingBase, -age));
 
 		// aging with the exponential decay and multiplication with EMA is necessary, because tasks may else be able to boost themself indefinitly to 1.0
 		ranking += (pow(agingBase, -age) * ema.ema);	
