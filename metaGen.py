@@ -339,6 +339,11 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     derivationFunctionsSrc+= "      auto stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
     derivationFunctionsSrc+= "      auto tv = hasConclusionTruth ? TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth) : null;\n"
+
+    derivationFunctionsSrc+= "      if(hasConclusionTruth && tv.conf < 0.0001) {\n"
+    derivationFunctionsSrc+= "          return; // conclusions with such a low conf are not relevant to the system\n"
+    derivationFunctionsSrc+= "      }\n"
+
     derivationFunctionsSrc+= "      resultSentences.arr ~= new shared Sentence(derivationPunctation, conclusionTerm, tv, stamp);\n"
     derivationFunctionsSrc+= "   }\n"
     derivationFunctionsSrc+= "}\n"

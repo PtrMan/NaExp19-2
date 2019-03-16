@@ -263,6 +263,18 @@ class WorkingMemory {
 	TaskWithAttention[] activeTasks;
 }
 
+// checks if a task with the specific stamp is already in the list of active tasks
+bool attentionHasActiveTaskByStamp(shared WorkingMemory wm, shared Stamp stamp) {
+	// TODO< use dict by hash of the stamp >
+	foreach(shared TaskWithAttention iTaskWithAv; wm.activeTasks) {
+		if (Stamp.equals(stamp, iTaskWithAv.task.sentence.stamp)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // called when the attention values have to get recomputed for the most important tasks
 void attentionUpdateQuick(shared WorkingMemory wm, long cycleCounter) {
 	// TODO< remove from array and insert again with insertion sort >
@@ -673,13 +685,16 @@ shared class Reasoner {
 			}
 		}
 
-		{ // TODO ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value >
-			// WORKAROUND< we just add the conclusions as tasks >
+		{ // ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value
 			foreach(shared Sentence iDerivedSentence; derivedSentences) {
 				auto task = new shared Task();
 				task.sentence = iDerivedSentence;
-
-				// TODO< don't add if it is known by stamp !!! >
+				
+				bool isActiveByStamp = attentionHasActiveTaskByStamp(mem.workingMemory, task.sentence.stamp);
+				if (isActiveByStamp) {
+					continue; // we don't add it to the tasks if it was already derived
+					          // we check by stamp because it is a good way to make sure so
+				}
 
 				// TODO< compute base attention value by type of conclusion (1.0 if it is not a question, questions AV * factor)
 
@@ -1196,6 +1211,19 @@ class Stamp {
 			}
 		}
 		return false;
+	}
+
+	public static bool equals(shared Stamp a, shared Stamp b) {
+		if (a.trail.length != b.trail.length) {
+			return false;
+		}
+
+		foreach(long idx; 0..a.trail.length) {
+			if (a.trail[idx] != b.trail[idx]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public static shared(Stamp) merge(shared Stamp a, shared Stamp b) {
