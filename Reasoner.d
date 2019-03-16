@@ -83,7 +83,7 @@ void testQuestionDerivation0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
 	}
 
 
@@ -179,7 +179,7 @@ void test0() {
 
 				auto task = new shared Task();
 				task.sentence = sentence;
-				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
 			}
 
 			for(int i=0;i<termNames.length-1;i++) {
@@ -207,7 +207,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
 	}
 	
 
@@ -220,7 +220,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
 	}
 	
 
@@ -270,19 +270,49 @@ class WorkingMemory {
 	TaskWithAttention[] activeTasks;
 }
 
+// called when the attention values have to get recomputed for the most important tasks
+void attentionUpdateQuick(shared WorkingMemory wm) {
+	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
+		// we update the exponential-moving-average 
+		// with the accumulated value - to slowly pull it to the accumulated value while considering the history of the EMA
+		iTaskWithAttention.ema.update(0.0 /* TODO< pull it from the accumulated value which is computed by weighting */);
+
+		// we need to reset the accumulated value to allow it to accumulate a new value until the next step
+		// TODO< implement setting of weighted accumulator to 0.0 >
+	}
+
+	// debug
+	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
+		writeln(
+			"attention: updated ranking of " ~
+			"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ to!string(iTaskWithAttention.task.sentence.stamp.trail) ~ " " ~
+			"to ranking=" ~ to!string(iTaskWithAttention.calcRanking())
+		);
+	}
+}
+
 // task with ema of activation
 shared class TaskWithAttention {
 	shared Task task;
 	Ema ema; // ema used to compute activation
 
-	public final shared this(shared Task task) {
+	// /param startValue additive start priority
+	public shared this(shared Task task, double startValue) {
 		this.task = task;
 		ema.k = 0.1; // TODO< refine and expose parameter >
+		ema.ema = startValue;
 	}
 
-	public final double calcRanking() {
-		// TODO< refine formula >
-		return ema.ema + task.sentence.truth.calcExp();
+	public shared double calcRanking() {
+		if (task.sentence.isQuestion()) {
+			float questionBaseValue = 1.0; // is a virtual confidence for questions - can be used to prioritize questions over judgements and goals
+			return ema.ema + questionBaseValue; 
+		}
+		else {
+			// TODO< refine formula >
+			return ema.ema + task.sentence.truth.conf;
+		}
+
 	}
 }
 
@@ -364,7 +394,7 @@ struct Ema {
 	double k = 1; // adaptivity factor
 	double ema = 0;
 
-	public final double update(double value) {
+	public final shared double update(double value) {
 		ema = value * k + ema * (1.0 - k);
 		return ema;
 	}
@@ -549,6 +579,22 @@ shared class Reasoner {
 		if (debugVerbose)  writeln("singleCycle() ENTRY");
 		scope(exit)  if (debugVerbose)  writeln("singleCycle() EXIT");
 
+
+
+		{ // attention - we need to update the AV of highly prioritized items
+			if ((cycleCounter % 50) == 0) {
+				attentionUpdateQuick(mem.workingMemory);
+			}
+		}
+
+		{ // attention - we may need to remove concepts
+			if ((cycleCounter % 600) == 0) {
+				attentionRemoveIrrelevantConcepts(mem);
+			}
+		}
+
+
+
 		shared(Sentence)[] derivedSentences;
 		
 		{ // select task and process it with selected concepts
@@ -624,15 +670,10 @@ shared class Reasoner {
 
 				// TODO< don't add if it is known by stamp !!! >
 
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
 			}
 		}
 
-		{ // attention - we may need to remove concepts
-			if ((cycleCounter % 600) == 0) {
-				attentionRemoveIrrelevantConcepts(mem);
-			}
-		}
 
 		{ // debug notices after cycle
 			if ((cycleCounter % 200) == 0) {
