@@ -4,6 +4,13 @@
 # TODO< swizzle subject and predicate  when the copula is symetric >
 # TODO< implement sets >
 
+# TODO< add special backward inference rules >
+
+# LATER TODO< add rules for products to metaGen.py >
+# LATER TODO< add image rules for sequences >
+#             ask must be a sequence ProdStar because of images of sequences with a length more than two?
+
+
 # helper
 def isPlaceholder(string):
     return len(string) == 1 and string.istitle()

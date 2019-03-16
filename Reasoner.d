@@ -5,7 +5,9 @@
 //       we need to initialize the task with a start priority derived from the type of task (question, judgment) and premise priorities
 
 
-// TODO< deleted concepts have an average expectation of 0.0 - figure out why and fix it because it doesn't make any sense >
+
+
+// TODO< metagen: implement basic temporal reasoning rules >
 
 
 // TODO< trie generation: check for unequality of vars when they appear on both sides >
@@ -15,18 +17,17 @@
 
 // LATER TODO< unification for Q&A >
 
+// TODO< questions from outside invalidate active questions with the same term >
 
 // TODO REFACTOR< implement function which handles the recursive call of some delegate >
-
-// LATER TODO< basic attention mechanism >
 
 // TODO< implement  construction of compounds (class is ProdStar)  ex:   ("*", "A", "B")  >
 
 
-// LATER TODO< add rules for products to metaGen.py >
 
 // TODO< make term immutable >
 
+// TODO ATTENTION< implement activation spreading  by derived results >
 
 // LATER TODO< add rules for detachment to metaGen.py >
 // LATER TODO< metaGen.py : generate backward inference rules >
@@ -39,7 +40,6 @@
 
 
 // LATER TODO< variable unifier >
-// LATER TODO< backward inference >
 
 // TODO LATER MAYBE< disallow derivations  of the same component if it is set-like     ex: <d|d> >
 
