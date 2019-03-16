@@ -87,7 +87,7 @@ void testQuestionDerivation0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
 	}
 
 
@@ -183,7 +183,7 @@ void test0() {
 
 				auto task = new shared Task();
 				task.sentence = sentence;
-				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
+				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
 			}
 
 			for(int i=0;i<termNames.length-1;i++) {
@@ -211,7 +211,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
 	}
 	
 
@@ -224,7 +224,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
 	}
 	
 
@@ -305,15 +305,19 @@ shared class TaskWithAttention {
 
 	immutable long startSystemCycleTime;
 
+	double emaFactor; // factor to eep track of the value up to which the result can grow when EMA returns 1.0
+
 	// commented because the logic to accumulate it is not implemented
 	// double weightedActivationAccumulatorWeight = 0.0;
 	// double weightedActivationAccumulator = 0.0; // accumulates the activation - used to "pull" the EMA to this value in the next update
 
 	// /param startValue additive start priority
+	// /param emaFactor factor up to which the ema can grow
 	// /param startSystemCycleTime cycle time of the system when the attention value was created
-	public shared this(shared Task task, double startValue, long startSystemCycleTime) {
+	public shared this(shared Task task, double startValue, double emaFactor, long startSystemCycleTime) {
 		this.task = task;
 		this.startSystemCycleTime = startSystemCycleTime;
+		this.emaFactor = emaFactor;
 		ema.k = 0.1; // TODO< refine and expose parameter >
 		ema.ema = startValue;
 	}
@@ -332,8 +336,9 @@ shared class TaskWithAttention {
 
 		double ranking = conf;
 
-		// aging with the exponential decay and multiplication with EMA is necessary, because tasks may else be able to boost themself indefinitly to 1.0
-		ranking += (pow(agingBase, -age) * ema.ema);	
+		ranking += (
+			pow(agingBase, -age) * ema.ema * 		// aging with the exponential decay and multiplication with EMA is necessary, because tasks may else be able to boost themself indefinitly to 1.0
+			emaFactor); // multiply it with ema factor to limit the influence of EMA	
 
 		return ranking;
 	}
@@ -702,13 +707,15 @@ shared class Reasoner {
 
 				// compute base attention value by type of conclusion
 				// (1.0 if it is not a question, questions AV * factor)
-				double baseAttentionValue = 1.0;
+				double emaFactor = 1.0;
 				if (iDerivedSentence.isQuestion()) {
 					double derivedQuestionFactor = 0.9; // how much is the attention of a question punhished when it was drived from a parent question
-					baseAttentionValue = selectedTaskWithAttention.ema.ema * derivedQuestionFactor;
+					emaFactor = selectedTaskWithAttention.emaFactor * derivedQuestionFactor;
 				}
 
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, cycleCounter);
+				double baseAttentionValue = selectedTaskWithAttention.ema.ema;
+
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
 			}
 		}
 
