@@ -1,6 +1,6 @@
 
 
-// TODO< derive question >
+
 // TODO< attention for tasks >
 //       we need to initialize the task with a start priority derived from the type of task (question, judgment) and premise priorities
 
@@ -46,12 +46,13 @@
 
 import std.array;
 import std.random;
-import std.stdio;
+import std.math : pow;
+import std.stdio : writeln;
 import std.algorithm.mutation;
 import std.algorithm.comparison;
 import std.algorithm.sorting : sort;
-import std.conv;
-import core.sync.mutex;
+import std.conv : to;
+//import core.sync.mutex;
 import core.atomic;
 
 
@@ -83,7 +84,7 @@ void testQuestionDerivation0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
 	}
 
 
@@ -179,7 +180,7 @@ void test0() {
 
 				auto task = new shared Task();
 				task.sentence = sentence;
-				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
+				reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
 			}
 
 			for(int i=0;i<termNames.length-1;i++) {
@@ -207,7 +208,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
 	}
 	
 
@@ -220,7 +221,7 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, reasoner.cycleCounter);
 	}
 	
 
@@ -235,23 +236,14 @@ void test0() {
 
 		auto task = new shared Task();
 		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task);
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, reasoner.cycleCounter);
 	}
 	*/
 
 
-	foreach(long i;0..100) {  // TEST REASONING LOOP
-
-
-
-	
-
-
-
-	reasoner.singleCycle();
-
-
-	} // TEST REASONING LOOP
+	foreach(long i;0..1000) {  // TEST REASONING LOOP
+		reasoner.singleCycle();
+	}
 }
 
 
@@ -265,13 +257,13 @@ void test0() {
  * mechanisms are inspired by ALANN(2018)
  */
 class WorkingMemory {
-	// 
-	// TODO< add prioritization based on EXP() and activation(which is calculated with exponentially moving average) >
 	TaskWithAttention[] activeTasks;
 }
 
 // called when the attention values have to get recomputed for the most important tasks
-void attentionUpdateQuick(shared WorkingMemory wm) {
+void attentionUpdateQuick(shared WorkingMemory wm, long cycleCounter) {
+	// TODO< remove from array and insert again with insertion sort >
+
 	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
 		// we update the exponential-moving-average 
 		// with the accumulated value - to slowly pull it to the accumulated value while considering the history of the EMA
@@ -286,7 +278,7 @@ void attentionUpdateQuick(shared WorkingMemory wm) {
 		writeln(
 			"attention: updated ranking of " ~
 			"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ to!string(iTaskWithAttention.task.sentence.stamp.trail) ~ " " ~
-			"to ranking=" ~ to!string(iTaskWithAttention.calcRanking())
+			"to ranking=" ~ to!string(iTaskWithAttention.calcRanking(cycleCounter))
 		);
 	}
 }
@@ -296,23 +288,42 @@ shared class TaskWithAttention {
 	shared Task task;
 	Ema ema; // ema used to compute activation
 
+	immutable long startSystemCycleTime;
+
+	// commented because the logic to accumulate it is not implemented
+	// double weightedActivationAccumulatorWeight = 0.0;
+	// double weightedActivationAccumulator = 0.0; // accumulates the activation - used to "pull" the EMA to this value in the next update
+
 	// /param startValue additive start priority
-	public shared this(shared Task task, double startValue) {
+	// /param startSystemCycleTime cycle time of the system when the attention value was created
+	public shared this(shared Task task, double startValue, long startSystemCycleTime) {
 		this.task = task;
+		this.startSystemCycleTime = startSystemCycleTime;
 		ema.k = 0.1; // TODO< refine and expose parameter >
 		ema.ema = startValue;
 	}
 
-	public shared double calcRanking() {
-		if (task.sentence.isQuestion()) {
-			float questionBaseValue = 1.0; // is a virtual confidence for questions - can be used to prioritize questions over judgements and goals
-			return ema.ema + questionBaseValue; 
-		}
-		else {
-			// TODO< refine formula >
-			return ema.ema + task.sentence.truth.conf;
-		}
+	// /param systemCycleTime 
+	public shared double calcRanking(long systemCycleTime) {
+		float questionVirtualConfidenceValue = 1.0; // is a virtual confidence for questions - can be used to prioritize questions over judgements and goals
 
+		double agingBase = 1.2; // how fast does the priority decay based on time
+
+
+
+		double age = (systemCycleTime - startSystemCycleTime) * 0.1;
+
+		double conf = task.sentence.isQuestion() ? questionVirtualConfidenceValue : task.sentence.truth.conf;
+
+		double ranking = conf;
+
+		writeln("age ", age);
+		writeln("pw ", pow(agingBase, -age));
+
+		// aging with the exponential decay and multiplication with EMA is necessary, because tasks may else be able to boost themself indefinitly to 1.0
+		ranking += (pow(agingBase, -age) * ema.ema);	
+
+		return ranking;
 	}
 }
 
@@ -583,7 +594,7 @@ shared class Reasoner {
 
 		{ // attention - we need to update the AV of highly prioritized items
 			if ((cycleCounter % 50) == 0) {
-				attentionUpdateQuick(mem.workingMemory);
+				attentionUpdateQuick(mem.workingMemory, cycleCounter);
 			}
 		}
 
@@ -670,7 +681,9 @@ shared class Reasoner {
 
 				// TODO< don't add if it is known by stamp !!! >
 
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0);
+				// TODO< compute base attention value by type of conclusion (1.0 if it is not a question, questions AV * factor)
+
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, cycleCounter);
 			}
 		}
 
