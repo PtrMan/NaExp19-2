@@ -606,13 +606,13 @@ shared class Reasoner {
 				mem.conceptualize(iDerivedSentence.term);
 
 				if (iDerivedSentence.isJudgment()) {
-					// WORKAROUND< for now we just add it to the beliefs >
-					// TODO< must be done for every term and subterm of iDerivedSentence.term >
-					auto concept = mem.concepts.retConceptByName(iDerivedSentence.term);
-					updateBelief(concept, iDerivedSentence);
+					auto subterms = enumerateTermsRec(iDerivedSentence.term);
+					foreach(shared Term iTerm; subterms) {
+						auto concept = mem.concepts.retConceptByName(iTerm);
+						updateBelief(concept, iDerivedSentence);
+					}
 				}
-
-				writeln("after conceptualize");
+				// TODO< put derived question into concepts >
 			}
 		}
 
