@@ -620,19 +620,23 @@ shared class Reasoner {
 
 		shared(Sentence)[] derivedSentences;
 		
+		shared TaskWithAttention selectedTaskWithAttention;
+
 		{ // select task and process it with selected concepts
-			shared Task selectedTask;
+			
 			{ // select random task for processing
 				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
 				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng2);
 				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
-				selectedTask = mem.workingMemory.activeTasks[chosenTaskIndex].task;
+				selectedTaskWithAttention = mem.workingMemory.activeTasks[chosenTaskIndex];
 			}
 
 			// do test inference and look at the result (s)
 
 			
 			{ // pick random n concepts of the enumerated subterms of testtask and do inference for them
+				shared Task selectedTask = selectedTaskWithAttention.task;
+
 				auto termAndSubtermsOfSentenceOfTask = enumerateTermsRec(selectedTask.sentence.term);
 
 				int numberOfSampledTerms = 7;
@@ -696,9 +700,15 @@ shared class Reasoner {
 					          // we check by stamp because it is a good way to make sure so
 				}
 
-				// TODO< compute base attention value by type of conclusion (1.0 if it is not a question, questions AV * factor)
+				// compute base attention value by type of conclusion
+				// (1.0 if it is not a question, questions AV * factor)
+				double baseAttentionValue = 1.0;
+				if (iDerivedSentence.isQuestion()) {
+					double derivedQuestionFactor = 0.9; // how much is the attention of a question punhished when it was drived from a parent question
+					baseAttentionValue = selectedTaskWithAttention.ema.ema * derivedQuestionFactor;
+				}
 
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, cycleCounter);
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, cycleCounter);
 			}
 		}
 
