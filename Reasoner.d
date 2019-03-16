@@ -1,9 +1,6 @@
 
 
 
-// TODO< attention for tasks >
-//       we need to initialize the task with a start priority derived from the type of task (question, judgment) and premise priorities
-
 
 
 
@@ -60,11 +57,12 @@ import core.atomic;
 
 
 void main() {
-	// test0();
-	testQuestionDerivation0();
+	test0();
+	//testQuestionDerivation0();
 }
 
 // tests if a question can be derived
+// TODO< automate as unittest and check if it derives the question >
 void testQuestionDerivation0() {
 	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
