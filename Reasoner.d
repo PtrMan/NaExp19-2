@@ -59,8 +59,46 @@ import std.typecons : Nullable;
 
 
 void main() {
-	test0();
+	//test0();
+
 	//testQuestionDerivation0();
+	testTemporalSimple0();
+
+}
+
+// tests simple temporal inference rule
+void testTemporalSimple0() {
+	shared Reasoner reasoner = new shared Reasoner();
+	reasoner.init();
+
+	// trigger rule    ('&/', 'A', 't') =/> B), (('&/', 'C', 'z') =/> B)    |-   (('&/', 'A', 't') =/> C)
+
+	{ // add existing belief
+		shared Term term = new shared Binary("=/>", new shared Binary("&/", new shared AtomicTerm("A"), new shared IntervalImpl(5)), new shared AtomicTerm("B"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{ // add task
+		shared Term term = new shared Binary("=/>", new shared Binary("&/", new shared AtomicTerm("C"), new shared IntervalImpl(5)), new shared AtomicTerm("B"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence('.', term, tv, stamp);
+
+		auto task = new shared Task();
+		task.sentence = sentence;
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
+	}
+
+	foreach(long i;0..60) {
+		reasoner.singleCycle();
+	}
+
+
 }
 
 // tests if a question can be derived
@@ -512,7 +550,7 @@ shared class Memory {
 					conceptualizeByTermRec(binary.subject);
 					conceptualizeByTermRec(binary.predicate);
 				}
-				else if (cast(shared AtomicTerm)term !is null) {
+				else if (isAtomic(term)) {
 					// we can't recurse into atomics
 				}
 				else {
@@ -542,7 +580,7 @@ public final void addQuestionToConcepts(shared Memory mem, shared Term questionT
 				addQuestionRec(binary.subject);
 				addQuestionRec(binary.predicate);
 			}
-			else if (cast(shared AtomicTerm)name !is null) {
+			else if (isAtomic(name)) {
 				// we can't recurse into atomics
 			}
 			else {
@@ -554,6 +592,7 @@ public final void addQuestionToConcepts(shared Memory mem, shared Term questionT
 
 	addQuestionRec(questionTerm);
 }
+
 
 // adds the belief to the concepts
 public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief) {
@@ -571,7 +610,7 @@ public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief)
 				addBeliefRec(binary.subject);
 				addBeliefRec(binary.predicate);
 			}
-			else if (cast(shared AtomicTerm)name !is null) {
+			else if (isAtomic(name)) {
 				// we can't recurse into atomics
 			}
 			else {
@@ -1000,7 +1039,7 @@ bool interpretTrieRec(
 			return false; // propagate failure
 		}
 
-		long intervalValue = (cast(Interval)term).retInterval();
+		long intervalValue = (cast(shared Interval)term).retInterval();
 
 		if (trieElement.stringPayload == "premiseT") {
 			trieCtx.intervalPremiseT = intervalValue;
@@ -1044,7 +1083,7 @@ interface Term {
 }
 
 interface Interval : Term {
-	long retInterval(); // return the value of the interval
+	shared long retInterval(); // return the value of the interval
 }
 
 
@@ -1092,12 +1131,16 @@ class AtomicTerm : Term {
     private immutable long cachedHash;
 }
 
+bool isAtomic(shared(Term) term) {
+	return cast(shared AtomicTerm)term !is null || cast(shared Interval)term !is null;
+}
+
 class IntervalImpl : Interval {
 	public shared this(long value) {
 		this.value = value;
 	}
 
-	public long retInterval() {return value;}
+	public long retInterval() shared {return value;}
 
 	public char retType() shared {return 'i';}
 
@@ -1288,7 +1331,10 @@ double calcExp(shared TruthValue tv) {
 
 double calcProjectedConf(long timeA, long timeB) {
 	long diff = abs(timeA - timeB);
-	return pow(2.0, -diff) * 0.005;
+
+	writeln("calcProj diff = " ~to!string(diff));
+
+	return pow(2.0, -diff * 0.003);
 }
 
 class Stamp {
@@ -1529,7 +1575,7 @@ shared(Term[]) enumerateTermsRec(shared Term term) {
 		shared(Term[]) enumPred = enumerateTermsRec(binary.predicate);
 		return [term] ~ enumSubj ~ enumPred;
 	}
-	else if (cast(shared AtomicTerm)term !is null) {
+	else if (cast(shared AtomicTerm)term !is null || cast(shared Interval)term !is null) {
 		// we can't recurse into atomics
 		return [term];
 	}
@@ -1569,12 +1615,21 @@ bool isSameRec(shared Term a, shared Term b) {
 }
 
 string convToStrRec(shared Term term) {
-	if (cast(shared AtomicTerm)term) {
+	if (cast(shared AtomicTerm)term !is null) {
 		return (cast(shared AtomicTerm)term).name;
 	}
-	else if (cast(shared Binary)term) {
+	else if (cast(shared Binary)term !is null) {
 		auto binary = cast(shared Binary)term;
 		return "<" ~ convToStrRec(binary.subject) ~ binary.copula ~ convToStrRec(binary.predicate) ~ ">";
+	}
+	else if (cast(shared Interval)term !is null) {
+		long intervalValue = (cast(shared Interval)term).retInterval();
+		if (intervalValue >= 0) {
+			return "+" ~ to!string(intervalValue);
+		}
+		else {
+			return to!string(intervalValue);
+		}
 	}
 	else {
 		// TODO< call function which throws an exception in debug mode >
