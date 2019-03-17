@@ -50,7 +50,7 @@
 
 import std.array;
 import std.random;
-import std.math : pow;
+import std.math : pow, abs;
 import std.stdio : writeln;
 import std.algorithm.mutation;
 import std.algorithm.comparison;
@@ -748,6 +748,8 @@ class Sentences {
 struct TrieContext {
 	Nullable!long intervalPremiseT; // used to store the "t" value in the evaluation of the trie
 	Nullable!long intervalPremiseZ; // used to store the "z" value in the evaluation of the trie
+
+	double projectedTruthConfidence = 0.0;
 }
 
 class TrieDeriver {
@@ -976,8 +978,20 @@ bool interpretTrieRec(
 		// fall through because we want to walk children
 	}
 	else if (trieElement.type == TrieElement.EnumType.INTERVALPROJECTION) {
-		// TODO< implement interval projection >
-		writeln("TODO - INTERVALPROJECTION !");
+		// compute the TV of the projected interval
+
+		if (trieElement.stringPayload == "IntervalProjection(t,z)") {
+			if (trieCtx.intervalPremiseT.isNull() || trieCtx.intervalPremiseZ.isNull()) {
+				return false; // propagate error
+			}
+
+			long t = trieCtx.intervalPremiseT, z = trieCtx.intervalPremiseZ;
+
+			trieCtx.projectedTruthConfidence = calcProjectedConf(t, z); // calculate projection
+		}
+		else {
+			return false; // propagate error
+		}
 	}
 	else if(trieElement.type == TrieElement.EnumType.LOADINTERVAL) {
 		// checks and loads interval
@@ -1273,6 +1287,11 @@ class TruthValue {
 
 double calcExp(shared TruthValue tv) {
 	return (tv.freq - 0.5) * /*strength*/tv.conf + /*offset to map to (0;1)*/0.5;
+}
+
+double calcProjectedConf(long timeA, long timeB) {
+	long diff = abs(timeA - timeB);
+	return pow(2.0, -diff) * 0.005;
 }
 
 class Stamp {
