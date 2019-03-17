@@ -1140,9 +1140,9 @@ class Binary : BinaryTerm {
         return hash;
     }
 
-	public string copula;
-	public shared Term subject;
-	public shared Term predicate;
+	public immutable string copula;
+	public shared Term subject; // TODO< make immutable >
+	public shared Term predicate; // TODO< make immutable >
 }
 
 // TODO< convert to struct >
