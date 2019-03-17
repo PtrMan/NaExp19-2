@@ -139,7 +139,13 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
             pathsPremiseB[premiseBPred[1]] = ["b.predicate", "idx0"] # index indicates array access
             pathsPremiseB[premiseBPred[2]] = ["b.predicate", "idx1"] # index indicates array access
 
-
+    def retPathOfName(name):
+        if name in pathsPremiseA:
+            return pathsPremiseA[name]
+        elif name in pathsPremiseB:
+            return pathsPremiseB[name]
+        else:
+            raise Exception("couldn't find name " + name)
 
 
     def retCode(obj):
@@ -148,14 +154,7 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
             if name == "t": # special case - is the time
                 return "new shared IntervalImpl(trieCtx.intervalResultT)"
 
-            resList = None
-
-            if name in pathsPremiseA:
-                resList = pathsPremiseA[name]
-            elif name in pathsPremiseB:
-                resList = pathsPremiseB[name]
-            else:
-                raise Exception("couldn't find name " + name)
+            resList = retPathOfName(name)
 
             if len(resList) == 1:
                 if resList[0][0] == 'a' or resList[0][0] == 'b':
@@ -324,6 +323,32 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
         print "    "
         teCounter+=1
+
+    if intervalProjection != "": # do we need to emit code for the computation of the interval(s)?
+        if intervalProjection == "IntervalProjection(t,z)":
+            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
+            print "    te"+str(teCounter)+".stringPayload = \"premiseT\";"
+            print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("t"))+";"
+            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+            print "    "
+            teCounter+=1
+
+            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
+            print "    te"+str(teCounter)+".stringPayload = \"premiseZ\";"
+            print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("z"))+";"
+            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+            print "    "
+            teCounter+=1
+
+            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.INTERVALPROJECTION);"
+            print "    te"+str(teCounter)+".stringPayload = \""+intervalProjection+"\";"
+            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+            print "    "
+            teCounter+=1
+        else:
+            raise Exception("Unknown type of interval projection (not implemented)!")
+
+
     
     print "    shared TrieElement teX = new shared TrieElement(TrieElement.EnumType.EXEC);"
     print "    teX.fp = &derive"+str(staticFunctionCounter)+";"
@@ -456,7 +481,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"), ("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     
     copAsymHasTimeOffset = "/" in str(copAsym) or "\\" in str(copAsym)
-    IntervalProjection = "WithIntervalProjection(t,z)" if copAsymHasTimeOffset else ""
+    IntervalProjection = "IntervalProjection(t,z)" if copAsymHasTimeOffset else ""
     
     if True: # block
         gen(("A", copAsym, "B"),   ("C", copAsymZ, "B"),    ("A", copAsym, "C"),   ("induction", IntervalProjection), OmitForHOL("weak"))

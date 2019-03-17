@@ -3,6 +3,7 @@
 
 
 
+// TODO< implement temporal inference in trie processing >
 
 // TODO< metagen: implement basic temporal reasoning rules >
 
@@ -54,6 +55,7 @@ import std.algorithm.sorting : sort;
 import std.conv : to;
 //import core.sync.mutex;
 import core.atomic;
+import std.typecons : Nullable;
 
 
 void main() {
@@ -741,7 +743,7 @@ class Sentences {
 
 // context to carry state across the evaluation of trie nodes
 struct TrieContext {
-	long intervalResultT; // used to store the "t" value in the evaluation of the trie
+	Nullable!long intervalResultT; // used to store the "t" value in the evaluation of the trie
 }
 
 class TrieDeriver {
@@ -773,6 +775,8 @@ class TrieElement {
 	public EnumType type;
 	public EnumSide side;
 	public string checkedString; // can be checked copula
+	public string stringPayload;
+	public string[] path;
 
 	public string[] pathLeft;
 	public string[] pathRight;
@@ -791,6 +795,9 @@ class TrieElement {
 		WALKCOMPARE, // walk left and compare with walk right
 
 		WALKCHECKCOMPOUND, // walk and check the type of a compound
+
+		LOADINTERVAL, // load the value of a interval by a path
+		INTERVALPROJECTION, // compute the interval projection
 
 		EXEC, // trie element to run some code with a function
 	}
@@ -963,6 +970,14 @@ bool interpretTrieRec(
 		else {} // ignore
 
 		// fall through because we want to walk children
+	}
+	else if (trieElement.type == TrieElement.EnumType.INTERVALPROJECTION) {
+		// TODO< implement interval projection >
+		writeln("TODO - INTERVALPROJECTION !");
+	}
+	else if(trieElement.type == TrieElement.EnumType.LOADINTERVAL) {
+		// TODO< implement loading of interval by path >
+		writeln("TODO - LOADINTERVAL !");
 	}
 
 	// we need to iterate children if we are here
