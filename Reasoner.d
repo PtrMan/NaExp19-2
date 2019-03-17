@@ -3,15 +3,12 @@
 
 
 
-// TODO< implement temporal inference in trie processing >
 
 // TODO< metagen: implement basic temporal reasoning rules >
 
-// TODO< implement missing trie operations for temporal reasoning >
-// TODO< implement TV computation of projection >
+// TODO< implement temporal inference in trie processing >
+// TODO< implement TV computation of projection when building the conclusion >
 
-
-// TODO< trie generation: check for unequality of vars when they appear on both sides >
 
 // TODO< Binary can be a compound-term or something else - we need to overhaul the interface and some of the impl >
 

@@ -385,7 +385,12 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
     derivationFunctionsSrc+= "      shared Binary conclusionTerm = new shared Binary(\""+escape(conclusionCopula)+"\", conclusionSubj, conclusionPred);\n"
 
     derivationFunctionsSrc+= "      auto stamp = Stamp.merge(aSentence.stamp, bSentence.stamp);\n"
+
     derivationFunctionsSrc+= "      auto tv = hasConclusionTruth ? TruthValue.calc(\""+truth+"\", aSentence.truth, bSentence.truth) : null;\n"
+
+    
+    if intervalProjection == "IntervalProjection(t,z)": # do we need to manipulate the tv for projection?
+            derivationFunctionsSrc+= "      tv = new shared TruthValue(tv.freq, tv.conf * trieCtx.projectedTruthConfidence); // multiply confidence with confidence of projection\n"
 
     derivationFunctionsSrc+= "      if(hasConclusionTruth && tv.conf < 0.0001) {\n"
     derivationFunctionsSrc+= "          return; // conclusions with such a low conf are not relevant to the system\n"
