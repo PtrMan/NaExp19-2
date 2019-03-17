@@ -33,7 +33,8 @@ staticFunctionCounter = 0
 # used to accumulate all static functions for the derivation
 derivationFunctionsSrc = ""
 
-def gen(premiseA, premiseB, conclusion, truthTuple, desire):
+# code generator : emit code
+def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
     # unpack truthTuple into truth and 
     (truth, intervalProjection) = truthTuple
 
@@ -371,11 +372,41 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
     staticFunctionCounter+=1
 
+# generate code for the rule
+def gen(premiseA, premiseB, conclusion, truthTuple, desire):
+    # helper to convert a premise from the temporal form to something which we can generate the code for
+    # ex: "A =/>(t) B" to "(&/, A, t) =/> B"
+    def convTerm2(term):
+        if isinstance(term, tuple):
+            if len(term) == 3:
+
+                (a, b, c) = term
+
+                if isPlaceholder(a): # normal handling for statement
+
+                    (name0, copula, name1) = term # structure of conclusion term is encoded as tuple
+
+                    if isinstance(copula, CWT):
+                        # we have to rebuild the statement
+
+                        return (("&/", name0, copula.tname), copula.copula, name1)
+                    else:
+                        return term # no special handling necessary because it is not a CWT
+
+                else: # special handling for compound
+                    return term # because we only care about statements
+
+            else:
+                raise Exception("unhandled case") # we expect a tuple of length 3
+        else:
+            return term # no special treatment necessary
+
+    genEmit(convTerm2(premiseA), convTerm2(premiseB), convTerm2(conclusion), truthTuple, desire)
     
 
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
-    #["-->","<->",[["&"],"|",["-","~"]]],
+    ["-->","<->",[["&"],"|",["-","~"]]],
     #["==>","<=>",[["&&"],"||",None]], #
     [CWT("=/>","t"),CWT("</>","t"),[[CWT("&/","t"),"&|"],"||",None]], ##
     #["=|>","<|>",[["&/","&|"],"||",None]], #
@@ -400,7 +431,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     def ival(obj,tname):
         if isinstance(obj, CWT):
             return obj.retWithReplacedTName(tname)
-        return str.replace("t",tname)
+        return obj.replace("t",tname)
 
     copAsymZ = ival(copAsym, "z")
 
