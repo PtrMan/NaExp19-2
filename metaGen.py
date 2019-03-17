@@ -26,7 +26,7 @@ class CWT(object):
 def isPlaceholder(string):
     return len(string) == 1 and string.istitle()
 
-emitExecCode = False # do we emit executable code?
+emitExecCode = True # do we emit executable code?
 
 staticFunctionCounter = 0
 
@@ -246,8 +246,6 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
     teCounter = 2
 
     if not isPlaceholder(premiseA[0]):
-        raise NotImplemented()
-        """ commented because not used by rules and thus not tested
         comparedCompoundType = premiseA[0][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
@@ -261,11 +259,8 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    "
 
         teCounter+=1
-        """
 
     if not isPlaceholder(premiseA[2]):
-        raise NotImplemented()
-        """
         comparedCompoundType = premiseA[2][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
@@ -279,7 +274,6 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
         print "    "
 
         teCounter+=1
-        """
     
 
     if not isPlaceholder(premiseB[0]):
@@ -434,6 +428,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
         return obj.replace("t",tname)
 
     copAsymZ = ival(copAsym, "z")
+
 
 
 
