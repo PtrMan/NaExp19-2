@@ -738,6 +738,12 @@ class Sentences {
 	public shared(Sentence)[] arr;
 }
 
+
+// context to carry state across the evaluation of trie nodes
+struct TrieContext {
+	long intervalResultT; // used to store the "t" value in the evaluation of the trie
+}
+
 class TrieDeriver {
 	// tries which are the roots and are iterated independently
 	shared(TrieElement)[] rootTries;
@@ -749,8 +755,12 @@ class TrieDeriver {
 
 	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
 		foreach(shared TrieElement iRootTries; rootTries) {
-			interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences);
-			interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences);
+			{   TrieContext ctx;
+				interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences, &ctx);
+			}
+			{   TrieContext ctx;
+				interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences, &ctx);
+			}
 		}
 	}
 }
@@ -769,7 +779,7 @@ class TrieElement {
 
 	// function which builds the result or returns null on failure
 	// trie element is passed to pass some additional data to it
-	public void function(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences, shared TrieElement trieElement) fp;
+	public void function(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences, shared TrieElement trieElement, TrieContext *trieCtx) fp;
 
 	public TrieElement[] children; // children are traversed if the check was true
 
@@ -792,7 +802,8 @@ bool interpretTrieRec(
 	shared TrieElement trieElement,
 	shared Sentence leftSentence,
 	shared Sentence rightSentence,
-	Sentences resultSentences
+	Sentences resultSentences,
+	TrieContext *trieCtx
 ) {
 	bool debugVerbose = false;
 
@@ -866,7 +877,7 @@ bool interpretTrieRec(
 	else if(trieElement.type == TrieElement.EnumType.EXEC) {
 		if(debugVerbose) writeln("interpretTrieRec EXEC");
 
-		trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement);
+		trieElement.fp(leftSentence, rightSentence, resultSentences, trieElement, trieCtx);
 	}
 	else if(trieElement.type == TrieElement.EnumType.WALKCOMPARE) {
 		if(debugVerbose) writeln("interpretTrieRec WALKCOMPARE");
@@ -956,7 +967,7 @@ bool interpretTrieRec(
 
 	// we need to iterate children if we are here
 	foreach( shared TrieElement iChildren; trieElement.children) {
-		bool recursionResult = interpretTrieRec(iChildren, leftSentence, rightSentence, resultSentences);
+		bool recursionResult = interpretTrieRec(iChildren, leftSentence, rightSentence, resultSentences, trieCtx);
 		if (recursionResult ) {
 			//return recursionResult;
 		}
@@ -977,12 +988,16 @@ interface Term {
 	// a : atomic
 	// b : binary with copula
 	// S : set
+	// i : interval
 	char retType();
 
 	// same terms have to have the same hash
 	shared long retHash();
 }
 
+interface Interval : Term {
+	long retInterval(); // return the value of the interval
+}
 
 
 /* commented because not used
@@ -1024,9 +1039,28 @@ class AtomicTerm : Term {
 
 	public char retType() {return 'a';}
 
-	public string name;
+	public immutable string name;
 
-    private long cachedHash;
+    private immutable long cachedHash;
+}
+
+class IntervalImpl : Interval {
+	public shared this(long value) {
+		this.value = value;
+	}
+
+	public long retInterval() {return value;}
+
+	public char retType() {return 'i';}
+
+	public shared long retHash() {
+		long hash = value;
+        hash = hash << 3 || hash >> (64-3); // rotate
+        hash ^= 0x34052AAB34052AAB;
+        return hash;
+    }
+
+	private immutable long value;
 }
 
 interface BinaryTerm : Term {

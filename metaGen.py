@@ -1,6 +1,12 @@
 
 # Non-Axiomatic Logic generation
 
+
+# TODO< disable rules like  (where the timing of the conclusion is complicated)
+#      (A =/>(t) B),   (C =/>(z) B)                    |-      ((&/(t) A C) =/>(t) B)  (Truth:UnionWithIntervalProjection(t,z))
+#       because it is difficult to emit correct coe for it
+# >
+
 # TODO< swizzle subject and predicate  when the copula is symetric >
 # TODO< implement sets >
 
@@ -35,7 +41,7 @@ derivationFunctionsSrc = ""
 
 # code generator : emit code
 def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
-    # unpack truthTuple into truth and 
+    # unpack truthTuple into truth and intervalProjection
     (truth, intervalProjection) = truthTuple
 
     (premiseASubj, premiseACopula, premiseAPred) = premiseA
@@ -139,6 +145,9 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
     def retCode(obj):
 
         def retCodeOfVar(name):
+            if name == "t": # special case - is the time
+                return "new shared IntervalImpl(trieCtx.intervalResultT)"
+
             resList = None
 
             if name in pathsPremiseA:
@@ -215,7 +224,7 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
     # TODO< print desire >
-    print "// ("+str(premiseASubj)+" "+str(premiseACopula)+" "+str(premiseAPred)+"), ("+str(premiseBSubj)+" "+str(premiseBCopula)+" "+str(premiseBPred)+")   |-   ("+str(conclusionSubj)+" "+str(conclusionCopula)+" "+str(conclusionPred)+")\t\t(Truth:"+truth+intervalProjection+")"
+    print "// effective    ("+str(premiseASubj)+" "+str(premiseACopula)+" "+str(premiseAPred)+"), ("+str(premiseBSubj)+" "+str(premiseBCopula)+" "+str(premiseBPred)+")   |-   ("+str(conclusionSubj)+" "+str(conclusionCopula)+" "+str(conclusionPred)+")\t\t(Truth:"+truth+intervalProjection+")"
     
     global emitExecCode
     if not emitExecCode:
@@ -328,7 +337,7 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
 
 
 
-    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(shared Sentence aSentence, shared Sentence bSentence, Sentences resultSentences, shared TrieElement trieElement) {\n"
+    derivationFunctionsSrc+= "static void derive"+str(staticFunctionCounter)+"(shared Sentence aSentence, shared Sentence bSentence, Sentences resultSentences, shared TrieElement trieElement, TrieContext *trieCtx) {\n"
     derivationFunctionsSrc+= "   assert(!(aSentence.isQuestion() && bSentence.isQuestion()), \"Invalid derivation : question-question\");\n"
     derivationFunctionsSrc+= "   \n"
     derivationFunctionsSrc+= "   \n"
@@ -395,12 +404,19 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
         else:
             return term # no special treatment necessary
 
+    # unpack truthTuple into truth and intervalProjection
+    (truth, intervalProjection) = truthTuple
+
+    # TODO< print desire >
+    print "// rule         "+str(premiseA)+", "+str(premiseB)+"   |-   " +  str(conclusion) + ")\t\t(Truth:"+truth+intervalProjection+")"
+
+
     genEmit(convTerm2(premiseA), convTerm2(premiseB), convTerm2(conclusion), truthTuple, desire)
     
 
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
-    ["-->","<->",[["&"],"|",["-","~"]]],
+    #["-->","<->",[["&"],"|",["-","~"]]],
     #["==>","<=>",[["&&"],"||",None]], #
     [CWT("=/>","t"),CWT("</>","t"),[[CWT("&/","t"),"&|"],"||",None]], ##
     #["=|>","<|>",[["&/","&|"],"||",None]], #
