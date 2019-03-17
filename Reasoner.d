@@ -1147,8 +1147,8 @@ class Binary : BinaryTerm {
 
 // TODO< convert to struct >
 class TruthValue {
-	public float freq;
-	public double conf;
+	public immutable float freq;
+	public immutable double conf;
 
 	public final shared this(float freq, double conf) {
 		this.freq = freq;
