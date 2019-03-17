@@ -152,7 +152,7 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
 
         def retCodeOfVar(name):
             if name == "t": # special case - is the time
-                return "new shared IntervalImpl(trieCtx.intervalResultT)"
+                return "new shared IntervalImpl(trieCtx.intervalPremiseT)"
 
             resList = retPathOfName(name)
 

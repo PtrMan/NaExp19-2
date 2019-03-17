@@ -7,6 +7,9 @@
 
 // TODO< metagen: implement basic temporal reasoning rules >
 
+// TODO< implement missing trie operations for temporal reasoning >
+// TODO< implement TV computation of projection >
+
 
 // TODO< trie generation: check for unequality of vars when they appear on both sides >
 
@@ -743,7 +746,8 @@ class Sentences {
 
 // context to carry state across the evaluation of trie nodes
 struct TrieContext {
-	Nullable!long intervalResultT; // used to store the "t" value in the evaluation of the trie
+	Nullable!long intervalPremiseT; // used to store the "t" value in the evaluation of the trie
+	Nullable!long intervalPremiseZ; // used to store the "z" value in the evaluation of the trie
 }
 
 class TrieDeriver {
@@ -976,8 +980,26 @@ bool interpretTrieRec(
 		writeln("TODO - INTERVALPROJECTION !");
 	}
 	else if(trieElement.type == TrieElement.EnumType.LOADINTERVAL) {
-		// TODO< implement loading of interval by path >
-		writeln("TODO - LOADINTERVAL !");
+		// checks and loads interval
+		//
+		// it is loaded by path into a variable in trie-context
+
+		shared Term term = walk(trieElement.path);
+		if (term is null || term.retType() != 'i') { // must be valid interval
+			return false; // propagate failure
+		}
+
+		long intervalValue = (cast(Interval)term).retInterval();
+
+		if (trieElement.stringPayload == "premiseT") {
+			trieCtx.intervalPremiseT = intervalValue;
+		}
+		else if (trieElement.stringPayload == "premiseZ") {
+			trieCtx.intervalPremiseZ = intervalValue;
+		}
+		else { // interval name is invalid
+			writeln("warning - invalid interval name");
+		}
 	}
 
 	// we need to iterate children if we are here
@@ -1004,7 +1026,7 @@ interface Term {
 	// b : binary with copula
 	// S : set
 	// i : interval
-	char retType();
+	char retType() shared;
 
 	// same terms have to have the same hash
 	shared long retHash();
@@ -1052,7 +1074,7 @@ class AtomicTerm : Term {
         return cachedHash;
     }
 
-	public char retType() {return 'a';}
+	public char retType() shared {return 'a';}
 
 	public immutable string name;
 
@@ -1066,7 +1088,7 @@ class IntervalImpl : Interval {
 
 	public long retInterval() {return value;}
 
-	public char retType() {return 'i';}
+	public char retType() shared {return 'i';}
 
 	public shared long retHash() {
 		long hash = value;
@@ -1089,7 +1111,7 @@ class Binary : BinaryTerm {
 		this.predicate = predicate;
 	}
 
-	public char retType() {return 'b';}
+	public char retType() shared {return 'b';}
 
     public shared long retHash() {
     	// TODO OPTIMIZATION< cache hash >
