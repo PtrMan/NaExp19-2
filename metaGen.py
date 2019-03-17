@@ -153,6 +153,10 @@ def genEmit(premiseA, premiseB, conclusion, truthTuple, desire):
         def retCodeOfVar(name):
             if name == "t": # special case - is the time
                 return "new shared IntervalImpl(trieCtx.intervalPremiseT)"
+            elif name == "t+z": # special case - is the time
+                return "new shared IntervalImpl(trieCtx.intervalPremiseT+trieCtx.intervalPremiseZ)"
+            elif name == "t-z": # special case - is the time
+                return "new shared IntervalImpl(trieCtx.intervalPremiseT-trieCtx.intervalPremiseZ)"
 
             resList = retPathOfName(name)
 
@@ -446,10 +450,10 @@ def gen(premiseA, premiseB, conclusion, truthTuple, desire):
 
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
-    #["-->","<->",[["&"],"|",["-","~"]]],
-    #["==>","<=>",[["&&"],"||",None]], #
+    ["-->","<->",[["&"],"|",["-","~"]]],
+    ["==>","<=>",[["&&"],"||",None]], #
     [CWT("=/>","t"),CWT("</>","t"),[[CWT("&/","t"),"&|"],"||",None]], ##
-    #["=|>","<|>",[["&/","&|"],"||",None]], #
+    ["=|>","<|>",[["&/","&|"],"||",None]], #
     #[CWT("=\>","t"),None ,[["&/","&|"],"||",None]] ###
 ]
 
@@ -479,7 +483,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     # TODO< implement inference generation function to generate code which accepts only one argument >
     #print "(A "+copAsym+" B)\t\t\t\t\t|-\t(B "+ival(copAsym,"-t")+" A)\t\t(Truth:Conversion)"
     
-    if False:
+    if True:
         #print "(A "+copAsym+" B),\t(B "+copAsymZ+" C)\t\t\t|-\t(A "+ival(copAsym,"t+z")+" C)\t\t(Truth:deduction"+OmitForHOL(", Desire:Strong")+")"
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"), ("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     
@@ -487,30 +491,31 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     IntervalProjection = "IntervalProjection(t,z)" if copAsymHasTimeOffset else ""
     
     if True: # block
-        gen(("A", copAsym, "B"),   ("C", copAsymZ, "B"),    ("A", copAsym, "C"),   ("induction", IntervalProjection), OmitForHOL("weak"))
-        gen(("A", copAsym, "B"),   ("A", copAsymZ, "C"),    ("B", copAsym, "C"),   ("abduction", IntervalProjection), OmitForHOL("strong"))
-
+        gen(("A", copAsym, "B"),   ("C", copAsymZ, "B"),    ("A", ival(copAsym, "t-z"), "C"),   ("induction", IntervalProjection), OmitForHOL("weak"))
+    
+    if True:
+        gen(("A", copAsym, "B"),   ("A", copAsymZ, "C"),    ("B", ival(copAsym, "t-z"), "C"),   ("abduction", IntervalProjection), OmitForHOL("strong"))
 
     if copSym != None:
         copSymZ = ival(copSym,"z")
         
-        if False:
+        if True:
             #print "(A "+copSym+" B),\t(B "+copSymZ+" C)\t\t\t|-\t(A "+ival(copSym,"t+z")+" C)\t\t(Truth:resemblance"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copSym,"B"),("B",copSymZ,"C"),  ("A",ival(copSym,"t+z"),"C"),  ("resemblance", ""), OmitForHOL("strong"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copAsym+" C)\t\t(Truth:analogy"+IntervalProjection+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"B"),  ("A",copAsym,"C"),   ("analogy", IntervalProjection), OmitForHOL("strong"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" A)\t\t\t|-\t(C "+ival(copSym,"t+z")+" B)\t\t(Truth:analogy"+OmitForHOL(", Desire:Strong")+")"
             gen(("A",copAsym,"B"),("C",copSymZ,"A"),   ("C",ival(copSym,"t+z"),"B"),  ("analogy", ""), OmitForHOL("strong"))
         
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(C "+copSymZ+" B)\t\t\t|-\t(A "+copSym+" C)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("C", copSymZ, "B"),   ("A",copSym,"C"), ("comparison", IntervalProjection), OmitForHOL("weak"))
 
-        if False:
+        if True:
             #print "(A "+copAsym+" B),\t(A "+copSymZ+" C)\t\t\t|-\t(C "+copSym+" B)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("A",copSymZ,"C"), ("C",copSym,"B"), ("comparison", IntervalProjection), OmitForHOL("weak"))
     
