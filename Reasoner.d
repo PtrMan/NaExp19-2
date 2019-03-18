@@ -64,15 +64,77 @@ import std.digest.sha;
 
 void main() {
 	
-	//test0();
+	test0(1000);
 
 	//testQuestionDerivation0();
 	//testTemporalSimple0();
 
 	//testTemporalInduction1();
+	//testTemporalInduction1();
 
-	testTemporalInduction1();
+	//testMaze0();
 }
+
+
+
+
+// more complex induction example, triggers various rules
+void testMaze0() {
+	shared Reasoner reasoner = new shared Reasoner();
+	reasoner.init();
+
+	
+
+
+	{ // add existing belief
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("m10"), new shared AtomicTerm("m20"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{ // add existing belief
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("m20"), new shared AtomicTerm("m30"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{ // add existing belief
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("m30"), new shared AtomicTerm("m40"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{ // add task
+		shared Term term = new shared Binary("<->", new shared AtomicTerm("m00"), new shared AtomicTerm("m10"));
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
+		auto sentence = new shared Sentence('.', term, tv, stamp);
+
+		auto task = new shared Task();
+		task.sentence = sentence;
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
+	}
+
+
+	foreach(long i;0..5000) {
+		reasoner.singleCycle();
+	}
+
+}
+
+
 
 
 // more complex induction example, triggers various rules
@@ -84,7 +146,7 @@ void testTemporalInduction1() {
 
 		foreach(string iTermName; ["A","B","C","D","E"]) {
 			{
-				shared Term term = new shared AtomicTerm(iTermName);
+				shared Term term = new shared Binary("-->", new shared AtomicTerm(iTermName), new shared AtomicTerm("e"));
 				auto tv = new shared TruthValue(1.0f, 0.9f);
 				
 				reasoner.event(term, tv);
@@ -98,7 +160,7 @@ void testTemporalInduction1() {
 	}
 
 
-	foreach(long i;0..1000000) {
+	foreach(long i;0..5000) {
 		reasoner.singleCycle();
 	}
 
@@ -204,7 +266,7 @@ void testQuestionDerivation0() {
 }
 
 // tests some complex interactions of the inference
-void test0() {	
+void test0(int numberOfCycles) {	
 	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
 
@@ -350,7 +412,7 @@ void test0() {
 	*/
 
 
-	foreach(long i;0..1000) {  // TEST REASONING LOOP
+	foreach(long i;0..numberOfCycles) {  // TEST REASONING LOOP
 		reasoner.singleCycle();
 	}
 }
@@ -740,7 +802,7 @@ shared class Reasoner {
 
 			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
 
-			bool showDerivations = false;
+			bool showDerivations = true;
 
 			if (showDerivations) {
 				foreach(shared Sentence iDerivedSentence; derivedSentences) {
