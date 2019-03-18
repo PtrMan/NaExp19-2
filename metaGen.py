@@ -82,8 +82,8 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     # unpack truthTuple into truth and intervalProjection
     (truth, intervalProjection) = truthTuple
 
-    (premiseASubj, premiseACopula, premiseAPred) = premiseA
-    (premiseBSubj, premiseBCopula, premiseBPred) = premiseB
+    
+    
     (conclusionSubj, conclusionCopula, conclusionPred) = conclusion
 
 
@@ -95,75 +95,86 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
                           # can be multiple
 
     pathsPremiseA = {}
-    if not isinstance(premiseASubj, tuple):
-        pathsPremiseA[premiseASubj] = ["a.subject"]
-    else:
-        pathsPremiseA[premiseASubj[1]] = ["a.subject", 0]
-        pathsPremiseA[premiseASubj[2]] = ["a.subject", 1]
 
-    if not isinstance(premiseAPred, tuple):
-        pathsPremiseA[premiseAPred] = ["a.predicate"]
-    else:
-        pathsPremiseA[premiseAPred[1]] = ["a.predicate", 0]
-        pathsPremiseA[premiseAPred[2]] = ["a.predicate", 1]
+    if isinstance(premiseA, tuple):
+        (premiseASubj, premiseACopula, premiseAPred) = premiseA
+
+        if not isinstance(premiseASubj, tuple):
+            pathsPremiseA[premiseASubj] = ["a.subject"]
+        else:
+            pathsPremiseA[premiseASubj[1]] = ["a.subject", 0]
+            pathsPremiseA[premiseASubj[2]] = ["a.subject", 1]
+
+        if not isinstance(premiseAPred, tuple):
+            pathsPremiseA[premiseAPred] = ["a.predicate"]
+        else:
+            pathsPremiseA[premiseAPred[1]] = ["a.predicate", 0]
+            pathsPremiseA[premiseAPred[2]] = ["a.predicate", 1]
 
 
-    if not isinstance(premiseBSubj, tuple):
-        checkedName = premiseBSubj
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject"]) )
-    else:
-        checkedName = premiseBSubj[1]
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject", 0]) )
+    if isinstance(premiseB, tuple):
+        (premiseBSubj, premiseBCopula, premiseBPred) = premiseB
 
-        checkedName = premiseBSubj[2]
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject", 1]) )
+        if not isinstance(premiseBSubj, tuple):
+            checkedName = premiseBSubj
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject"]) )
+        else:
+            checkedName = premiseBSubj[1]
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject", 0]) )
 
-    if not isinstance(premiseBPred, tuple):
-        checkedName = premiseBPred
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate"]) )
-    else:
-        checkedName = premiseBPred[1]
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate", 0]) )
+            checkedName = premiseBSubj[2]
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.subject", 1]) )
 
-        checkedName = premiseBPred[2]
-        if checkedName in pathsPremiseA:
-            samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate", 1]) )
+        if not isinstance(premiseBPred, tuple):
+            checkedName = premiseBPred
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate"]) )
+        else:
+            checkedName = premiseBPred[1]
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate", 0]) )
+
+            checkedName = premiseBPred[2]
+            if checkedName in pathsPremiseA:
+                samePremiseTerms.append( (pathsPremiseA[checkedName], ["b.predicate", 1]) )
 
 
     
     pathsPremiseB = {}
-    if not isinstance(premiseBSubj, tuple):
-        pathsPremiseB[premiseBSubj] = ["b.subject"]
-    else:
-        if True: #isPlaceholder(premiseBSubj[0]):
-            pathsPremiseB[premiseBSubj[1]] = ["b.subject", 0]
-            pathsPremiseB[premiseBSubj[2]] = ["b.subject", 1]
+
+    if isinstance(premiseB, tuple):
+        if not isinstance(premiseBSubj, tuple):
+            pathsPremiseB[premiseBSubj] = ["b.subject"]
         else:
-            # special handling for compounds
+            if True: #isPlaceholder(premiseBSubj[0]):
+                pathsPremiseB[premiseBSubj[1]] = ["b.subject", 0]
+                pathsPremiseB[premiseBSubj[2]] = ["b.subject", 1]
+            else:
+                # special handling for compounds
 
-            # NOT COMMENTED< because it will be useful for products and images and other compounds >
+                # NOT COMMENTED< because it will be useful for products and images and other compounds >
 
-            pathsPremiseB[premiseBSubj[1]] = ["b.subject", "idx0"] # index indicates array access
-            pathsPremiseB[premiseBSubj[2]] = ["b.subject", "idx1"] # index indicates array access
+                pathsPremiseB[premiseBSubj[1]] = ["b.subject", "idx0"] # index indicates array access
+                pathsPremiseB[premiseBSubj[2]] = ["b.subject", "idx1"] # index indicates array access
 
-    if not isinstance(premiseBPred, tuple):
-        pathsPremiseB[premiseBPred] = ["b.predicate"]
-    else:
-        if True: #isPlaceholder(premiseBPred[0]):
-            pathsPremiseB[premiseBPred[1]] = ["b.predicate", 0]
-            pathsPremiseB[premiseBPred[2]] = ["b.predicate", 1]
+        if not isinstance(premiseBPred, tuple):
+            pathsPremiseB[premiseBPred] = ["b.predicate"]
         else:
-            # special handling for compounds
+            if True: #isPlaceholder(premiseBPred[0]):
+                pathsPremiseB[premiseBPred[1]] = ["b.predicate", 0]
+                pathsPremiseB[premiseBPred[2]] = ["b.predicate", 1]
+            else:
+                # special handling for compounds
 
-            # NOT COMMENTED< because it will be useful for products and images and other compounds >
+                # NOT COMMENTED< because it will be useful for products and images and other compounds >
 
-            pathsPremiseB[premiseBPred[1]] = ["b.predicate", "idx0"] # index indicates array access
-            pathsPremiseB[premiseBPred[2]] = ["b.predicate", "idx1"] # index indicates array access
+                pathsPremiseB[premiseBPred[1]] = ["b.predicate", "idx0"] # index indicates array access
+                pathsPremiseB[premiseBPred[2]] = ["b.predicate", "idx1"] # index indicates array access
+
+
 
     def retPathOfName(name):
         if name in pathsPremiseA:
