@@ -965,6 +965,15 @@ class TrieDeriver {
 	}
 
 	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
+		bool debugVerbose = true;
+
+		if (debugVerbose) {
+			writeln("TrieDeriver.derive()");
+			writeln("   a="~leftSentence.convToStr());
+			writeln("   b="~rightSentence.convToStr());
+		}
+
+
 		foreach(shared TrieElement iRootTries; rootTries) {
 			{   TrieContext ctx;
 				ctx.occurrencetimePremiseA = leftSentence.stamp.occurrenceTime;
@@ -1422,6 +1431,10 @@ string convToStr(shared Sentence sentence) {
 	string str = convToStrRec(sentence.term) ~ sentence.punctation;
 	if (sentence.truth !is null) {
 		str ~= " %" ~ to!string(sentence.truth.freq) ~ ";" ~ to!string(sentence.truth.conf) ~ "%";
+	}
+
+	if (!sentence.stamp.occurrenceTime.isNull) {
+		str ~= " T="~to!string(sentence.stamp.occurrenceTime);
 	}
 
 	return str;
