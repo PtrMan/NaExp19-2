@@ -39,6 +39,28 @@ staticFunctionCounter = 0
 # used to accumulate all static functions for the derivation
 derivationFunctionsSrc = ""
 
+
+
+# helper to convert a term to a string
+def convTermToStr(term):
+    if isinstance(term, tuple):
+        (a, b, c) = obj
+
+        if isPlaceholder(a):
+            # normal handling for statement
+
+            (subj, copula, pred) = obj # structure of statement
+
+            return "<"+convTermToStr(subj)+str(copula)+convTermToStr(pred)+">"
+        else:
+            # special handling for compound
+
+            (compoundType, name0, name1) = obj
+
+            return "("+compoundType+convTermToStr(name0)+","+convTermToStr(name1)+")"
+    else:
+        return str(term)
+
 # code generator : emit code
 def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
@@ -231,7 +253,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
 
     # TODO< print desire >
-    print "// effective    ("+str(premiseASubj)+" "+str(premiseACopula)+" "+str(premiseAPred)+"), ("+str(premiseBSubj)+" "+str(premiseBCopula)+" "+str(premiseBPred)+")     "+str(preconditions)+"   |-   ("+str(conclusionSubj)+" "+str(conclusionCopula)+" "+str(conclusionPred)+")\t\t(Truth:"+truth+intervalProjection+")"
+    print "// effective    "+convTermToStr(premiseA)+", "+convTermToStr(premiseB)+"     "+str(preconditions)+"   |-   "+convTermToStr(conclusion)+" \t\t(Truth:"+truth+intervalProjection+")"
     
     global emitExecCode
     if not emitExecCode:
@@ -446,7 +468,7 @@ def gen(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     (truth, intervalProjection) = truthTuple
 
     # TODO< print desire >
-    print "// rule         "+str(premiseA)+", "+str(premiseB)+"   " +str(preconditions)+  "  |-   " +  str(conclusion) + ")\t\t(Truth:"+truth+intervalProjection+")"
+    print "// rule         "+convTermToStr(premiseA)+", "+convTermToStr(premiseB)+"   " +str(preconditions)+  "  |-   " +  convTermToStr(conclusion) + ")\t\t(Truth:"+truth+intervalProjection+")"
 
 
     genEmit(convTerm2(premiseA), convTerm2(premiseB), preconditions,  convTerm2(conclusion), truthTuple, desire)
@@ -526,17 +548,21 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     if not bFOL:
         isBackward = copSym == None
         for ConjCop in ConjCops:
-            predRel = "(Time:After(tB,tA))   " if copAsymHasTimeOffset else ("(Time:Parallel(tB,tA))" if "|" in str(copAsym) else "                      ")
-            predConj = "(Time:After(tB,tA))   " if "/" in str(ConjCop) or "\\" in str(ConjCop) else ("(Time:Parallel(tB,tA))" if "|" in str(copAsym) else "                      ")
-            forwardRel = "tB-tA" if "Time:After" in predRel else "       "
-            forwardConj = "tB-tA" if "Time:After" in predConj else "       "
+            predRel = ["Time:After(tB,tA)"] if copAsymHasTimeOffset else (["Time:Parallel(tB,tA)"] if "|" in str(copAsym) else [])
+            predConj = ["Time:After(tB,tA)"] if "/" in str(ConjCop) or "\\" in str(ConjCop) else (["Time:Parallel(tB,tA)"] if "|" in str(copAsym) else [])
+            forwardRel = "tB-tA" if "Time:After" in str(predRel) else ""
+            forwardConj = "tB-tA" if "Time:After" in str(predConj) else ""
 
-            #if not isBackward:
-            #    print "A, \t\tB\t"+predRel+"\t|-\t(A "+copAsym.replace("t",forwardRel)+ "B)\t\t(Truth:Induction, Variables:Introduce$#)"
-            #    print "A,\t\tB\t"+predConj+"\t|-\t("+ConjCop.replace("t",forwardConj)+" A B)\t\t(Truth:Intersection, Variables:Introduce#)"
-            #    print "A\t\tB\t"+predRel+"\t|-\t(B "+copSym.replace("t",forwardRel)+"A)\t\t(Truth:Comparison, Variables:Introduce$#)"
-            #else:
-            #    print "A, \t\tB\t"+predRel+"\t|-\t(B "+copAsym+"(tA-tB) A)\t(Truth:Induction, Variables:Introduce$#)"
+            if not isBackward:
+                pass
+
+                #print "A, \t\tB\t"+predRel+"\t|-\t(A "+copAsym.replace("t",forwardRel)+ "B)\t\t(Truth:Induction, Variables:Introduce$#)"
+                #print "A,\t\tB\t"+predConj+"\t|-\t("+ConjCop.replace("t",forwardConj)+" A B)\t\t(Truth:Intersection, Variables:Introduce#)"
+                #print "A\t\tB\t"+predRel+"\t|-\t(B "+copSym.replace("t",forwardRel)+"A)\t\t(Truth:Comparison, Variables:Introduce$#)"
+            else:
+                pass
+                #print "A, \t\tB\t"+predRel+"\t|-\t(B "+copAsym+"(tA-tB) A)\t(Truth:Induction, Variables:Introduce$#)"
+            
             #print "("+ConjCop+" A B)\t\t\t\t\t|-\tA\t\t\t(Truth:Deduction, Desire:Induction)"
         
         (tParam, tParam2) = (", Time:-t" if isBackward else ", Time:+t", ", Time:+t" if isBackward else ", Time:-t")
