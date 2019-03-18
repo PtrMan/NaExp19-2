@@ -76,7 +76,7 @@ void testTemporalSimple0() {
 	{ // add existing belief
 		shared Term term = new shared Binary("=/>", new shared Binary("&/", new shared AtomicTerm("A"), new shared IntervalImpl(5)), new shared AtomicTerm("B"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -86,7 +86,7 @@ void testTemporalSimple0() {
 	{ // add task
 		shared Term term = new shared Binary("=/>", new shared Binary("&/", new shared AtomicTerm("C"), new shared IntervalImpl(5)), new shared AtomicTerm("B"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto sentence = new shared Sentence('.', term, tv, stamp);
 
 		auto task = new shared Task();
@@ -110,7 +110,7 @@ void testQuestionDerivation0() {
 	{ // add existing belief
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -120,7 +120,7 @@ void testQuestionDerivation0() {
 	{ // add question task
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = null;
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto sentence = new shared Sentence('?', term, tv, stamp);
 
 		auto task = new shared Task();
@@ -147,7 +147,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -157,7 +157,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("c"), new shared AtomicTerm("d"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -175,7 +175,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("e"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -185,7 +185,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("e"), new shared AtomicTerm("f"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -195,7 +195,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("<=>", new shared AtomicTerm("b"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto beliefSentence = new shared Sentence(term, tv, stamp);
 
 		reasoner.mem.conceptualize(beliefSentence.term);
@@ -216,7 +216,7 @@ void test0() {
 
 				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
 				auto tv = new shared TruthValue(1.0f, 0.9f);
-				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+				auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 				auto sentence = new shared Sentence('.', term, tv, stamp);
 
 				auto task = new shared Task();
@@ -230,7 +230,7 @@ void test0() {
 
 				shared Term term = new shared Binary(iCopula, new shared AtomicTerm(termName0), new shared AtomicTerm(termName1));
 				auto tv = new shared TruthValue(1.0f, 0.9f);
-				auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+				auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 				auto beliefSentence = new shared Sentence('.', term, tv, stamp);
 
 				reasoner.mem.conceptualize(beliefSentence.term);
@@ -244,7 +244,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("-->", new shared AtomicTerm("d"), new shared AtomicTerm("c"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto sentence = new shared Sentence('.', term, tv, stamp);
 
 		auto task = new shared Task();
@@ -257,7 +257,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("<=>", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto sentence = new shared Sentence('.', term, tv, stamp);
 
 		auto task = new shared Task();
@@ -272,7 +272,7 @@ void test0() {
 	{
 		shared Term term = new shared Binary("<->", new shared AtomicTerm("a"), new shared AtomicTerm("b"));
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = new shared Stamp([reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEternal([reasoner.mem.retUniqueStampCounter()]);
 		auto sentence = new shared Sentence(term, tv, stamp);
 
 		auto task = new shared Task();
@@ -330,7 +330,7 @@ void attentionUpdateQuick(shared WorkingMemory wm, long cycleCounter) {
 	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
 		writeln(
 			"attention: updated ranking of " ~
-			"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ to!string(iTaskWithAttention.task.sentence.stamp.trail) ~ " " ~
+			"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ iTaskWithAttention.task.sentence.stamp.convToStr() ~ " " ~
 			"to ranking=" ~ to!string(iTaskWithAttention.calcRanking(cycleCounter))
 		);
 	}
@@ -1338,6 +1338,57 @@ double calcProjectedConf(long timeA, long timeB) {
 }
 
 class Stamp {
+	public string convToStr() shared {
+		return to!string(evidentialTrail.trail);
+	}
+
+	public static shared(Stamp) makeEternal(shared(long[]) trail) {
+		return new shared Stamp(Nullable!long.init, new shared EvidentialTrail(trail));
+	}
+
+	public static shared(Stamp) makeEvent(long occurrenceTime, shared(long[]) trail) {
+		auto occTime = Nullable!long(occurrenceTime);
+		return new shared Stamp(occTime, new shared EvidentialTrail(trail));
+	}
+
+	private final shared this(Nullable!long occurrenceTime, shared EvidentialTrail evidentialTrail) {
+		this.occurrenceTime = occurrenceTime;
+		this.evidentialTrail = evidentialTrail;
+	}
+
+	public static bool checkOverlap(shared Stamp a, shared Stamp b) {
+		// ASK< how to handle timestamp here ? >
+
+		return EvidentialTrail.checkOverlap(a.evidentialTrail, b.evidentialTrail);
+	}
+
+	public static bool equals(shared Stamp a, shared Stamp b) {
+		// TODO< take occurrenceTime into account >
+
+		return EvidentialTrail.equals(a.evidentialTrail, b.evidentialTrail);
+	}
+
+	public static shared(Stamp) merge(shared Stamp a, shared Stamp b) {
+		Nullable!long occurrenceTime = Nullable!long.init;
+		if (a.occurrenceTime.isNull() && !b.occurrenceTime.isNull()) {
+			occurrenceTime = b.occurrenceTime;
+		}
+		else if (!a.occurrenceTime.isNull() && b.occurrenceTime.isNull()) {
+			occurrenceTime = a.occurrenceTime;
+		}
+		else if(!a.occurrenceTime.isNull() && !b.occurrenceTime.isNull()) {
+			occurrenceTime = min(a.occurrenceTime, b.occurrenceTime); // use first occurence time
+		}
+
+		return new shared Stamp(occurrenceTime, EvidentialTrail.merge(a.evidentialTrail, b.evidentialTrail));
+	}
+
+	public immutable Nullable!long occurrenceTime; // a stamp may have a occurrenceTime
+	public EvidentialTrail evidentialTrail;
+}
+
+
+class EvidentialTrail {
 	// TODO OPTIMIZATION< allocate non-GC'ed memory >
 	public immutable shared(long[]) trail;
 
@@ -1345,7 +1396,7 @@ class Stamp {
 		this.trail = trail.idup;
 	}
 	
-	public static bool checkOverlap(shared Stamp a, shared Stamp b) {
+	public static bool checkOverlap(shared EvidentialTrail a, shared EvidentialTrail b) {
 		// TODO OPTIMIZATION< optimize for runtime >
 
 		bool[long] inA;
@@ -1361,7 +1412,7 @@ class Stamp {
 		return false;
 	}
 
-	public static bool equals(shared Stamp a, shared Stamp b) {
+	public static bool equals(shared EvidentialTrail a, shared EvidentialTrail b) {
 		if (a.trail.length != b.trail.length) {
 			return false;
 		}
@@ -1374,7 +1425,7 @@ class Stamp {
 		return true;
 	}
 
-	public static shared(Stamp) merge(shared Stamp a, shared Stamp b) {
+	public static shared(EvidentialTrail) merge(shared EvidentialTrail a, shared EvidentialTrail b) {
 		shared(long[]) zipped = [];
 
         int ia = 0, ib = 0;
@@ -1391,7 +1442,7 @@ class Stamp {
         // limit length
         zipped = zipped[0..min(zipped.length, 100)]; // TODO< make parameter >
 
-        return new shared Stamp(zipped);
+        return new shared EvidentialTrail(zipped);
 	}
 
 	public final shared string convToStr() {
@@ -1533,11 +1584,11 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 			}
 			else {
 				// doesn't overlap - revise
-				writeln("updateBelief: revise stamps = " ~ to!string(belief.stamp.trail) ~ "   " ~ to!string(iBelief.stamp.trail));
+				writeln("updateBelief: revise stamps = " ~ belief.stamp.convToStr() ~ "   " ~ iBelief.stamp.convToStr());
 
 				auto mergedStamp = Stamp.merge(belief.stamp, iBelief.stamp);
 
-				writeln("   merged stamp = " ~ to!string(mergedStamp.trail));
+				writeln("   merged stamp = " ~ mergedStamp.convToStr());
 
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
 				auto revisedBelief = new shared Sentence('.', belief.term, revisedTruth, mergedStamp);
