@@ -110,6 +110,8 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
         else:
             pathsPremiseA[premiseAPred[1]] = ["a.predicate", 0]
             pathsPremiseA[premiseAPred[2]] = ["a.predicate", 1]
+    else:
+        pathsPremiseA[premiseA] = ["a"]
 
 
     if isinstance(premiseB, tuple):
@@ -173,7 +175,8 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
                 pathsPremiseB[premiseBPred[1]] = ["b.predicate", "idx0"] # index indicates array access
                 pathsPremiseB[premiseBPred[2]] = ["b.predicate", "idx1"] # index indicates array access
-
+    else:
+        pathsPremiseB[premiseB] = ["b"]
 
 
     def retPathOfName(name):
