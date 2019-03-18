@@ -60,7 +60,37 @@ import std.typecons : Nullable;
 import Stamp : Stamp;
 import TruthValue : TruthValue, calcExp, calcProjectedConf;
 
+import std.digest.sha;
+
 void main() {
+	if(false){
+
+		shared Term term = new shared Binary("&/", new shared AtomicTerm("E"), new shared IntervalImpl(15));
+
+		writeln("hashA = ", term.retHash());
+		
+
+		
+		term = new shared Binary("&/", new shared AtomicTerm("E"), new shared IntervalImpl(30));
+
+		writeln("hashB = ", term.retHash());
+
+		writeln();
+
+		term = new shared AtomicTerm("E");
+		writeln("hashE = ", term.retHash());
+
+				term =  new shared IntervalImpl(30);
+		writeln("hash30 = ", term.retHash());
+
+						term =  new shared IntervalImpl(15);
+		writeln("hash15 = ", term.retHash());
+
+		ubyte[20] hash1 = sha1Of(to!string(10));
+		ulong n = *(cast(ulong*)&hash1);
+	}
+
+
 	//test0();
 
 	//testQuestionDerivation0();
@@ -94,7 +124,7 @@ void testTemporalInduction1() {
 
 	}
 
-	foreach(long i;0..2) {
+	foreach(long i;0..1000) {
 		reasoner.singleCycle();
 	}
 
@@ -1222,7 +1252,7 @@ interface Term {
 	char retType() shared;
 
 	// same terms have to have the same hash
-	shared long retHash();
+	ulong retHash() shared;
 }
 
 interface Interval : Term {
@@ -1248,8 +1278,8 @@ interface SetTerm : Term, Indexable {
 }
  */
 
-long calcHash(string str) {	
-	long hash = 17;
+ulong calcHash(string str) {	
+	ulong hash = 17;
     foreach(char ic; str) {
         hash *= ic;
         hash += 17;
@@ -1263,7 +1293,7 @@ class AtomicTerm : Term {
         cachedHash = calcHash(name);
 	}
 
-    public shared long retHash() {
+    public ulong retHash() shared {
         return cachedHash;
     }
 
@@ -1271,7 +1301,7 @@ class AtomicTerm : Term {
 
 	public immutable string name;
 
-    private immutable long cachedHash;
+    private immutable ulong cachedHash;
 }
 
 bool isAtomic(shared(Term) term) {
@@ -1287,11 +1317,11 @@ class IntervalImpl : Interval {
 
 	public char retType() shared {return 'i';}
 
-	public shared long retHash() {
-		long hash = value;
-        hash = hash << 3 || hash >> (64-3); // rotate
-        hash ^= 0x34052AAB34052AAB;
-        return hash;
+	public ulong retHash() shared  {
+		ubyte[20] hash1 = sha1Of(to!string(value));
+		ulong hash = *(cast(ulong*)&hash1);
+
+		return hash;
     }
 
 	private immutable long value;
@@ -1307,7 +1337,7 @@ class Binary : BinaryTerm {
 		this.subject = subject;
 		this.predicate = predicate;
 
-		long hash = subject.retHash();
+		ulong hash = subject.retHash();
         hash = (hash << 3) | (hash >> (64-3)); // rotate
         hash ^= 0x34052AAB34052AAB;
 
@@ -1322,7 +1352,7 @@ class Binary : BinaryTerm {
 
 	public char retType() shared {return 'b';}
 
-    public shared long retHash() {
+    public ulong retHash() shared {
         return cachedHash;
     }
 
@@ -1330,7 +1360,7 @@ class Binary : BinaryTerm {
 	public shared Term subject; // TODO< make immutable >
 	public shared Term predicate; // TODO< make immutable >
 
-	private immutable long cachedHash;
+	private immutable ulong cachedHash;
 }
 
 
@@ -1607,11 +1637,11 @@ class ConceptTable {
 	private shared(Concept)[] concepts;
 
 	// concepts by hashes of names
-	private Concepts[long] conceptsByNameHash;
+	private Concepts[ulong] conceptsByNameHash;
 
 
 	public final shared bool hasConceptByName(shared Term name) {
-		long hashOfName = name.retHash();
+		auto hashOfName = name.retHash();
 
 		if ((hashOfName in conceptsByNameHash) is null) {
 			return false;
@@ -1631,7 +1661,7 @@ class ConceptTable {
 		// TODO< must be ensure >
 		assert(hasConceptByName(name));
 
-		long hashOfName = name.retHash();
+		auto hashOfName = name.retHash();
 		auto listOfPotentialConcepts = conceptsByNameHash[hashOfName].arr;
 		foreach(shared Concept iConcept; listOfPotentialConcepts) {
 			if (isSameRec(iConcept.name, name)) {
@@ -1745,4 +1775,33 @@ void induceByEvent(shared EventInducer inducer, shared Reasoner reasoner, shared
 	}
 
 	inducer.eventTable ~= event; // store event
+}
+
+
+
+
+// cellular automata rule 30
+ulong rule30(ulong a) {
+	// bit ad idx with wraparound
+	bool bitAt(int idx) {
+		return (a >> ((idx+64) % 64)) != 0;
+	}
+
+	ulong result = 0;
+	foreach(int i;0..63) {
+		bool vm0 = bitAt(i-1);
+		bool vm1 = bitAt(i);
+		bool vm2 = bitAt(i+1);
+
+		bool v = ( vm2&&!vm1&&!vm0); // bit on for 100
+		v = v || (!vm2&& vm1&& vm0); // bit on for 011
+		v = v || (!vm2&& vm1&&!vm0); // bit on for 010
+		v = v || (!vm2&&!vm1&& vm0); // bit on for 001
+
+		if(v) {
+			result = result | (1<<i);
+		}
+	}
+
+	return result;
 }
