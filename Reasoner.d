@@ -669,6 +669,7 @@ shared class Reasoner {
 
 	shared Memory mem;
 	TrieDeriver deriver = new TrieDeriver();
+	EventInducer inducer = new EventInducer();
 
 	long cycleCounter = 0;
 	long numberOfDerivationsCounter = 0;
@@ -683,20 +684,18 @@ shared class Reasoner {
 
 	// called when ever a event happened
 	// is usually called from outside
-	/*
 	public void event(shared Term term, shared TruthValue tv) {
-		auto stamp = Stamp.makeEvent(cycleCounter, [reasoner.mem.retUniqueStampCounter()]);
+		auto stamp = Stamp.makeEvent(cycleCounter, [mem.retUniqueStampCounter()]);
 		auto eventSentence = new shared Sentence('.', term, tv, stamp);
-		reasoner.mem.conceptualize(eventSentence.term);
+		mem.conceptualize(eventSentence.term);
 
 
 		Sentences resultSentences = new Sentences();
-		inducer.induceByEvent(deriver, resultSentences, eventSentence); // reason about events with other events (or derived conclusions)
+		inducer.induceByEvent(this, deriver, resultSentences, eventSentence); // reason about events with other events (or derived conclusions)
 		shared(Sentence)[] derivedSentences = resultSentences.arr;
 
 		derivedConclusions(derivedSentences, null);
 	}
-	 */
 
 	// called when ever new conclusions were derived which have to get stored
 	synchronized protected void derivedConclusions(shared(Sentence)[] derivedSentences, shared TaskWithAttention selectedTaskWithAttention) {
@@ -1676,25 +1675,26 @@ shared(Term[]) sampleFromArray(shared(Term[]) arr, int numberOfSamples, ref Xors
 
 
 
-/*
+
 // induce input events to conclusions and feeds it into the reasoner
 class EventInducer {
-	// TODO< rewrite to table with utility function based on conf and time distance >
+	// TODO< rewrite to table with utility function based on conf and time distance and put under AIKR >
 	shared(Sentence)[] eventTable;
 }
 
-void induceByEvent(EventInducer inducer, shared TrieDeriver deriver, Sentences derivedConclusions, shared Sentence event) {
+void induceByEvent(shared EventInducer inducer, shared Reasoner reasoner, shared TrieDeriver deriver, Sentences derivedConclusions, shared Sentence event) {
 	if (inducer.eventTable.length > 0) {
+		// TODO< sample many more times >
+
 		Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))reasoner.rng;
 		long chosenEventIndex = uniform(0, inducer.eventTable.length, rng2);
 		reasoner.rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 
-		Sentence otherEvent = inducer.eventTable[chosenEventIndex];
+		shared Sentence otherEvent = inducer.eventTable[chosenEventIndex];
 
-		Sentences derivedConclusions;
 		deriver.derive(event, otherEvent, derivedConclusions);
 	}
 
 	inducer.eventTable ~= event;
 }
-*/
+
