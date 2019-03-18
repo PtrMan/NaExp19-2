@@ -9,7 +9,8 @@ dmd -g tempBuild000.d Stamp.d
 
 #rm autogen0.d
 
-rm tempBuild000.d tempBuild000.o
+#rm tempBuild000.d
+rm tempBuild000.o
 
 
 

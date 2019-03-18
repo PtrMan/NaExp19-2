@@ -805,14 +805,14 @@ class TrieDeriver {
 	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
 		foreach(shared TrieElement iRootTries; rootTries) {
 			{   TrieContext ctx;
-				trieCtx.occurrencetimePremiseA = leftSentence.stamp.occurrenceTime;
-				trieCtx.occurrencetimePremiseB = rightSentence.stamp.occurrenceTime;
+				ctx.occurrencetimePremiseA = leftSentence.stamp.occurrenceTime;
+				ctx.occurrencetimePremiseB = rightSentence.stamp.occurrenceTime;
 
 				interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences, &ctx);
 			}
 			{   TrieContext ctx;
-				trieCtx.occurrencetimePremiseA = rightSentence.stamp.occurrenceTime;
-				trieCtx.occurrencetimePremiseB = leftSentence.stamp.occurrenceTime;
+				ctx.occurrencetimePremiseA = rightSentence.stamp.occurrenceTime;
+				ctx.occurrencetimePremiseB = leftSentence.stamp.occurrenceTime;
 
 				interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences, &ctx);
 			}
@@ -851,6 +851,8 @@ class TrieElement {
 
 		LOADINTERVAL, // load the value of a interval by a path
 		INTERVALPROJECTION, // compute the interval projection
+
+		PRECONDITION,
 
 		EXEC, // trie element to run some code with a function
 	}
@@ -1062,6 +1064,29 @@ bool interpretTrieRec(
 			writeln("warning - invalid interval name");
 		}
 	}
+	else if(trieElement.type == TrieElement.EnumType.PRECONDITION) {
+
+		if (trieElement.stringPayload == "Time:After(tB,tA)" || trieElement.stringPayload == "Time:Parallel(tB,tA)") {
+			if (leftSentence.stamp.occurrenceTime.isNull || rightSentence.stamp.occurrenceTime.isNull) {
+				return false; // no timestamp - precondition failed
+			}
+
+			if(trieElement.stringPayload == "Time:After(tB,tA)") {
+				if( rightSentence.stamp.occurrenceTime < leftSentence.stamp.occurrenceTime ) {
+					return false; // propagate failure
+				}
+			}
+			else if(trieElement.stringPayload == "Time:Parallel(tB,tA)") {
+				if( !occurrenceTimeIsParallel(rightSentence.stamp.occurrenceTime, leftSentence.stamp.occurrenceTime)) {
+					return false;
+				}
+			}
+		}
+		else {
+			writeln("warning - invalid precondition");
+			return false; // fail by default
+		}
+	}
 
 	// we need to iterate children if we are here
 	foreach( shared TrieElement iChildren; trieElement.children) {
@@ -1078,6 +1103,13 @@ public enum EnumSide {
 	LEFT,
 	RIGHT
 }
+
+// are the events perceived to occur at the same time?
+bool occurrenceTimeIsParallel(long a, long b) {
+	long timeWindow = 50; // TODO< make parameter >
+	return abs(a - b) <= timeWindow;
+}
+
 
 
 

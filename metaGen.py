@@ -203,6 +203,11 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
             resList = retPathOfName(name)
 
             if len(resList) == 1:
+                if resList[0] == "a":
+                    return "a"
+                elif resList[0] == "b":
+                    return "b"
+
                 if resList[0][0] == 'a' or resList[0][0] == 'b':
                     code = "(" + "cast(Binary)"+resList[0][0] + ")" + resList[0][1:]
 
@@ -286,28 +291,38 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     
     print "{"
 
+    teCounter = 0
+
     if isinstance(premiseA, tuple):
         print "    shared TrieElement te0 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
         print "    te0.side = EnumSide.LEFT;"
         print "    te0.checkedString = \""+escape(premiseACopula)+"\";"
         print "    "
 
+        teCounter += 1
+
     if isinstance(premiseB, tuple):
-        print "    shared TrieElement te1 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
-        print "    te1.side = EnumSide.RIGHT;"
-        print "    te1.checkedString = \""+escape(premiseBCopula)+"\";"
-        print "    te0.children ~= te1;"
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
+        print "    te"+str(teCounter)+".side = EnumSide.RIGHT;"
+        print "    te"+str(teCounter)+".checkedString = \""+escape(premiseBCopula)+"\";"
+        
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
         print "    "
 
-    teCounter = 2
+        teCounter+=1
+
 
 
     for iPrecondition in preconditions:
-        if iPrecondition == "Time:After(tB,tA)":
+        if iPrecondition == "Time:After(tB,tA)" or iPrecondition == "Time:Parallel(tB,tA)":
             print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.PRECONDITION);"
             print "    te"+str(teCounter)+".stringPayload = \"" + iPrecondition + "\";"
-            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+
+            if teCounter > 0:
+                print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
             print "    "
+
+            teCounter+=1
         else:
             raise Exception("not implemented precondition: "+iPrecondition)
 
@@ -519,6 +534,10 @@ print "shared(TrieElement)[] initTrie() {"
 print "   shared(TrieElement)[] rootTries;"
 
 for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
+    isTemporal = \
+        "|" in str(copAsym) or \
+        "/" in str(copAsym) or \
+        "\\" in str(copAsym)
 
     bFOL = copAsym == "-->"
     OmitForHOL = lambda str: str if bFOL else ""
@@ -573,7 +592,8 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
             #print "(A "+copAsym+" B),\t(A "+copSymZ+" C)\t\t\t|-\t(C "+copSym+" B)\t\t(Truth:comparison"+IntervalProjection+OmitForHOL(", Desire:Weak")+")"
             gen(("A", copAsym, "B"),  ("A",copSymZ,"C"),    [],("C",copSym,"B"), ("comparison", IntervalProjection), OmitForHOL("weak"))
     
-    if not bFOL:
+
+    if isTemporal:
         isBackward = copSym == None
         for ConjCop in ConjCops:
             predRel = ["Time:After(tB,tA)"] if copAsymHasTimeOffset else (["Time:Parallel(tB,tA)"] if "|" in str(copAsym) else [])
@@ -586,12 +606,12 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
 
                 #print "A, \t\tB\t"+predRel+"\t|-\t(A "+copAsym.replace("t",forwardRel)+ "B)\t\t(Truth:Induction, Variables:Introduce$#)"
                 #print "A, \t\tB\t"+predRel+"\t|-\t(A "+copAsym.replace("t",forwardRel)+ "B)\t\t(Truth:Induction, Variables:Introduce$#)"
-                
-                print ival(copAsym, forwardRel)
                 gen("A", "B",  predRel,("A", ival(copAsym, forwardRel), "B"),  ("induction", ""), "")
 
                 #print "A,\t\tB\t"+predConj+"\t|-\t("+ConjCop.replace("t",forwardConj)+" A B)\t\t(Truth:Intersection, Variables:Introduce#)"
+
                 #print "A\t\tB\t"+predRel+"\t|-\t(B "+copSym.replace("t",forwardRel)+"A)\t\t(Truth:Comparison, Variables:Introduce$#)"
+
             else:
                 pass
                 #print "A, \t\tB\t"+predRel+"\t|-\t(B "+copAsym+"(tA-tB) A)\t(Truth:Induction, Variables:Introduce$#)"
