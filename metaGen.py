@@ -86,6 +86,10 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     
     (conclusionSubj, conclusionCopula, conclusionPred) = conclusion
 
+    isConclusionTemporal = \
+        "|" in str(conclusionCopula) or \
+        "/" in str(conclusionCopula) or \
+        "\\" in str(conclusionCopula)
 
 
     # need to figure out which terms are the same on both sides
@@ -397,22 +401,27 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
         print "    "
         teCounter+=1
 
+    hasIntervalT = "t" in pathsPremiseA or "t" in pathsPremiseB
+    hasIntervalZ = "z" in pathsPremiseA or "z" in pathsPremiseB
+
+    if hasIntervalT: # do we need to emit code for the computation of the interval(s)?
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
+        print "    te"+str(teCounter)+".stringPayload = \"premiseT\";"
+        print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("t"))+";"
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+        teCounter+=1
+
+    if hasIntervalZ: # do we need to emit code for the computation of the interval(s)?
+        print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
+        print "    te"+str(teCounter)+".stringPayload = \"premiseZ\";"
+        print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("z"))+";"
+        print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+        print "    "
+        teCounter+=1
+
     if intervalProjection != "": # do we need to emit code for the computation of the interval(s)?
         if intervalProjection == "IntervalProjection(t,z)":
-            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
-            print "    te"+str(teCounter)+".stringPayload = \"premiseT\";"
-            print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("t"))+";"
-            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
-            print "    "
-            teCounter+=1
-
-            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.LOADINTERVAL);"
-            print "    te"+str(teCounter)+".stringPayload = \"premiseZ\";"
-            print "    te"+str(teCounter)+".path = "+convertPathToDSrc(retPathOfName("z"))+";"
-            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
-            print "    "
-            teCounter+=1
-
             print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.INTERVALPROJECTION);"
             print "    te"+str(teCounter)+".stringPayload = \""+intervalProjection+"\";"
             print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
@@ -556,7 +565,7 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
     # TODO< implement inference generation function to generate code which accepts only one argument >
     #print "(A "+copAsym+" B)\t\t\t\t\t|-\t(B "+ival(copAsym,"-t")+" A)\t\t(Truth:Conversion)"
     
-    if False:
+    if True:
         #print "(A "+copAsym+" B),\t(B "+copAsymZ+" C)\t\t\t|-\t(A "+ival(copAsym,"t+z")+" C)\t\t(Truth:deduction"+OmitForHOL(", Desire:Strong")+")"
         gen(("A",copAsym,"B"), ("B",copAsymZ,"C"),   [] ,("A",ival(copAsym,"t+z"),"C"),    ("deduction", ""), OmitForHOL("strong"))
     

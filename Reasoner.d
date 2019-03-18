@@ -66,10 +66,39 @@ void main() {
 	//testQuestionDerivation0();
 	//testTemporalSimple0();
 
-	testTemporalInduction0();
+	//testTemporalInduction1();
+
+	testTemporalInduction1();
 }
 
 
+// more complex induction example, triggers various rules
+void testTemporalInduction1() {
+	shared Reasoner reasoner = new shared Reasoner();
+	reasoner.init();
+
+	foreach(int iRepetition; 0..10) {
+
+		foreach(string iTermName; ["A","B","C","D","E"]) {
+			{
+				shared Term term = new shared AtomicTerm(iTermName);
+				auto tv = new shared TruthValue(1.0f, 0.9f);
+				
+				reasoner.event(term, tv);
+			}
+
+			foreach(long i;0..5) {
+				reasoner.singleCycle();
+			}
+		}
+
+	}
+
+	foreach(long i;0..500) {
+		reasoner.singleCycle();
+	}
+
+}
 
 void testTemporalInduction0() {
 	shared Reasoner reasoner = new shared Reasoner();
@@ -900,7 +929,9 @@ class TrieElement {
 
 
 	public enum EnumType {
-		CHECKCOPULA, // check copula of premise
+		CHECKCOPULA, // check copula of premise which is a binary
+                     // the trie traversal is not continued if it is not a binary
+
 		//FIN, // terminate processing  - commented because it is implicitly terminated if nothing else matches
 
 		WALKCOMPARE, // walk left and compare with walk right
@@ -925,7 +956,7 @@ bool interpretTrieRec(
 	Sentences resultSentences,
 	TrieContext *trieCtx
 ) {
-	bool debugVerbose = true;
+	bool debugVerbose = false;
 
 	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
@@ -978,7 +1009,7 @@ bool interpretTrieRec(
 		if (trieElement.side == EnumSide.LEFT) {
 			Binary b = cast(Binary)left;
 			if (b is null) {
-				throw new Exception("");
+				return false; // we assume that checkcopula checks implicitly for an binary, so it is fine to return
 			}
 			if (b.copula != trieElement.checkedString) {
 				return true; // propagate failure
@@ -987,7 +1018,7 @@ bool interpretTrieRec(
 		else { // check right
 			Binary b = cast(Binary)right;
 			if (b is null) {
-				throw new Exception("");
+				return false; // we assume that checkcopula checks implicitly for an binary, so it is fine to return
 			}
 			if (b.copula != trieElement.checkedString) {
 				return true; // propagate failure
