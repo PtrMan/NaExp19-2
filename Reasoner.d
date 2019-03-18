@@ -787,6 +787,9 @@ struct TrieContext {
 	Nullable!long intervalPremiseT; // used to store the "t" value in the evaluation of the trie
 	Nullable!long intervalPremiseZ; // used to store the "z" value in the evaluation of the trie
 
+	Nullable!long occurrencetimePremiseA;
+	Nullable!long occurrencetimePremiseB;
+
 	double projectedTruthConfidence = 0.0;
 }
 
@@ -802,9 +805,15 @@ class TrieDeriver {
 	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
 		foreach(shared TrieElement iRootTries; rootTries) {
 			{   TrieContext ctx;
+				trieCtx.occurrencetimePremiseA = leftSentence.stamp.occurrenceTime;
+				trieCtx.occurrencetimePremiseB = rightSentence.stamp.occurrenceTime;
+
 				interpretTrieRec(iRootTries, leftSentence, rightSentence, resultSentences, &ctx);
 			}
 			{   TrieContext ctx;
+				trieCtx.occurrencetimePremiseA = rightSentence.stamp.occurrenceTime;
+				trieCtx.occurrencetimePremiseB = leftSentence.stamp.occurrenceTime;
+
 				interpretTrieRec(iRootTries, rightSentence, leftSentence, resultSentences, &ctx);
 			}
 		}
