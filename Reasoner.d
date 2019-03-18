@@ -1308,11 +1308,11 @@ class Binary : BinaryTerm {
 		this.predicate = predicate;
 
 		long hash = subject.retHash();
-        hash = hash << 3 || hash >> (64-3); // rotate
+        hash = (hash << 3) | (hash >> (64-3)); // rotate
         hash ^= 0x34052AAB34052AAB;
 
         hash ^= predicate.retHash();
-        hash = hash << 3 || hash >> (64-3); // rotate
+        hash = (hash << 3) | (hash >> (64-3)); // rotate
         hash ^= 0x34052AAB34052AAB;
         
         hash ^= calcHash(copula);
@@ -1543,7 +1543,20 @@ bool isSameRec(shared Term a, shared Term b) {
 		if (a2.copula != b2.copula) {
 			return false;
 		}
-		return isSameRec(a2.subject, b2.subject) && isSameRec(a2.predicate, b2.predicate);
+		bool isSame = isSameRec(a2.subject, b2.subject) && isSameRec(a2.predicate, b2.predicate);
+
+		if (!isSame) {
+			writeln("DBG  isSameRec() failed for");
+			writeln("                 termA = " ~convToStrRec(a)~ " w/ hash=" ~to!string(a.retHash()));
+			writeln("                 termB = " ~convToStrRec(b)~ " w/ hash=" ~to!string(b.retHash()));
+		}
+
+		return isSame;
+	}
+	else if(cast(shared Interval)a !is null && cast(shared Interval)b !is null) {
+		auto a2 = cast(shared Interval)a;
+		auto b2 = cast(shared Interval)b;
+		return a2.retInterval() == b2.retInterval();
 	}
 
 	return false;
