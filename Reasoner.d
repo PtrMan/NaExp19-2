@@ -64,9 +64,48 @@ void main() {
 	//test0();
 
 	//testQuestionDerivation0();
-	testTemporalSimple0();
+	//testTemporalSimple0();
+
+	testTemporalInduction0();
+}
+
+
+
+void testTemporalInduction0() {
+	shared Reasoner reasoner = new shared Reasoner();
+	reasoner.init();
+
+	// trigger rule    ('&/', 'A', 't') =/> B), (('&/', 'C', 'z') =/> B)    |-   (('&/', 'A', 't') =/> C)
+
+	{ // add existing belief
+		shared Term term = new shared AtomicTerm("A");
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEvent(reasoner.cycleCounter, [reasoner.mem.retUniqueStampCounter()]);
+		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(beliefSentence.term);
+		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	}
+
+	{ // add task
+		shared Term term = new shared AtomicTerm("B");
+		auto tv = new shared TruthValue(1.0f, 0.9f);
+		auto stamp = Stamp.makeEvent(5, [reasoner.mem.retUniqueStampCounter()]); // fake occurence time
+		auto sentence = new shared Sentence('.', term, tv, stamp);
+
+		reasoner.mem.conceptualize(sentence.term);
+
+		auto task = new shared Task();
+		task.sentence = sentence;
+		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
+	}
+
+	foreach(long i;0..60) {
+		reasoner.singleCycle();
+	}
 
 }
+
 
 // tests simple temporal inference rule
 void testTemporalSimple0() {
@@ -867,7 +906,7 @@ bool interpretTrieRec(
 	Sentences resultSentences,
 	TrieContext *trieCtx
 ) {
-	bool debugVerbose = false;
+	bool debugVerbose = true;
 
 	if (debugVerbose) writeln("interpretTrieRec ENTRY");
 
@@ -1066,15 +1105,23 @@ bool interpretTrieRec(
 	}
 	else if(trieElement.type == TrieElement.EnumType.PRECONDITION) {
 
+		writeln("DBG precondition");
+
 		if (trieElement.stringPayload == "Time:After(tB,tA)" || trieElement.stringPayload == "Time:Parallel(tB,tA)") {
 			if (leftSentence.stamp.occurrenceTime.isNull || rightSentence.stamp.occurrenceTime.isNull) {
 				return false; // no timestamp - precondition failed
 			}
 
 			if(trieElement.stringPayload == "Time:After(tB,tA)") {
-				if( rightSentence.stamp.occurrenceTime < leftSentence.stamp.occurrenceTime ) {
+				bool isPreconditionFullfilled = rightSentence.stamp.occurrenceTime > leftSentence.stamp.occurrenceTime;
+
+				if( !isPreconditionFullfilled ) {
 					return false; // propagate failure
 				}
+
+				writeln("DBG Time:After(tB,tA) ", isPreconditionFullfilled);
+
+
 			}
 			else if(trieElement.stringPayload == "Time:Parallel(tB,tA)") {
 				if( !occurrenceTimeIsParallel(rightSentence.stamp.occurrenceTime, leftSentence.stamp.occurrenceTime)) {
