@@ -580,7 +580,7 @@ shared class Memory {
 	public ConceptTable concepts;
 	public Xorshift rng = Xorshift(24);
 
-	public int numberOfBeliefs = 100; // Reasoner parameter!
+	public int numberOfBeliefs = 40; // Reasoner parameter!
 	public long maxNumberOfConcepts = 3000; // Reasoner parameter!
 
 	private long stampCounter = 0;
@@ -1555,18 +1555,26 @@ bool isSameRec(shared Term a, shared Term b) {
 		return true;
 	}
 
-	if( a.retHash() != b.retHash() ) {
+	if (a.retType() != b.retType()) {
 		return false;
 	}
 
+	if (a.retHash() != b.retHash()) {
+		return false;
+	}
+
+
 	// fall back to recursive comparision
 
-	if (cast(shared AtomicTerm)a !is null && cast(shared AtomicTerm)b !is null) {
+	char aType = a.retType();
+	char bType = b.retType();
+
+	if (aType == 'a' && bType == 'a') {
 		auto a2 = cast(shared AtomicTerm)a;
 		auto b2 = cast(shared AtomicTerm)b;
 		return a2.name == b2.name;
 	}
-	else if(cast(shared Binary)a !is null && cast(shared Binary)b !is null) {
+	else if(aType == 'b' && bType == 'b') {
 		auto a2 = cast(shared Binary)a;
 		auto b2 = cast(shared Binary)b;
 		
@@ -1583,7 +1591,7 @@ bool isSameRec(shared Term a, shared Term b) {
 
 		return isSame;
 	}
-	else if(cast(shared Interval)a !is null && cast(shared Interval)b !is null) {
+	else if(aType == 'i' && bType == 'i') {
 		auto a2 = cast(shared Interval)a;
 		auto b2 = cast(shared Interval)b;
 		return a2.retInterval() == b2.retInterval();
@@ -1710,6 +1718,13 @@ class ExpPriorityTable {
 
 	// doesn't limit size!
 	public shared void insertByExp(shared Sentence inserted) {
+		// TODO< use binary search because the entities are sorted by expectation anyways >
+
+		if(false) {
+			// TODO DEBUG < check if all entities are sorted >
+		}
+
+
 		for(int idx=0;idx<entries.length;idx++) {
 			auto iElement = entries[idx];
 			if(iElement.truth.calcExp() < inserted.truth.calcExp()) {
