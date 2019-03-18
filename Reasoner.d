@@ -94,7 +94,7 @@ void testTemporalInduction1() {
 
 	}
 
-	foreach(long i;0..500) {
+	foreach(long i;0..2) {
 		reasoner.singleCycle();
 	}
 
@@ -1306,14 +1306,8 @@ class Binary : BinaryTerm {
 		this.copula = copula;
 		this.subject = subject;
 		this.predicate = predicate;
-	}
 
-	public char retType() shared {return 'b';}
-
-    public shared long retHash() {
-    	// TODO OPTIMIZATION< cache hash >
-
-        long hash = subject.retHash();
+		long hash = subject.retHash();
         hash = hash << 3 || hash >> (64-3); // rotate
         hash ^= 0x34052AAB34052AAB;
 
@@ -1323,12 +1317,20 @@ class Binary : BinaryTerm {
         
         hash ^= calcHash(copula);
 
-        return hash;
+		cachedHash = hash;
+	}
+
+	public char retType() shared {return 'b';}
+
+    public shared long retHash() {
+        return cachedHash;
     }
 
 	public immutable string copula;
 	public shared Term subject; // TODO< make immutable >
 	public shared Term predicate; // TODO< make immutable >
+
+	private immutable long cachedHash;
 }
 
 
