@@ -531,9 +531,9 @@ def gen(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
     ["-->","<->",[["&"],"|",["-","~"]]],
-    #["==>","<=>",[["&&"],"||",None]], #
+    ["==>","<=>",[["&&"],"||",None]], #
     [CWT("=/>","t"),CWT("</>","t"),[[CWT("&/","t"),"&|"],"||",None]], ##
-    #["=|>","<|>",[["&/","&|"],"||",None]], #
+    ["=|>","<|>",[["&/","&|"],"||",None]], #
     #[CWT("=\>","t"),None ,[["&/","&|"],"||",None]] ###
 ]
 
