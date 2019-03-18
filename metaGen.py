@@ -273,16 +273,18 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
 
 
-    conclusionSubjCode = retCode(conclusionSubj)
-    conclusionPredCode = retCode(conclusionPred)
-
-
-    # TODO< print desire >
-    print "// effective    "+convTermToStr(premiseA)+", "+convTermToStr(premiseB)+"     "+str(preconditions)+"   |-   "+convTermToStr(conclusion)+" \t\t(Truth:"+truth+intervalProjection+")"
+    printEffective = False # do we want to print the "effective"(how it is compiled) rule?
+    if printEffective:
+        # TODO< print desire >
+        print "// effective    "+convTermToStr(premiseA)+", "+convTermToStr(premiseB)+"     "+str(preconditions)+"   |-   "+convTermToStr(conclusion)+" \t\t(Truth:"+truth+intervalProjection+")"
     
     global emitExecCode
     if not emitExecCode:
         return # if we don't emit the code and just the inference rules with comments
+
+    conclusionSubjCode = retCode(conclusionSubj)
+    conclusionPredCode = retCode(conclusionPred)
+
 
     # build trie
     
@@ -529,9 +531,9 @@ def gen(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 # each copula-type of form [AsymCop,SymCop,[ConjunctiveCops,DisjunctiveCop,MinusCops]]
 CopulaTypes = [
     ["-->","<->",[["&"],"|",["-","~"]]],
-    ["==>","<=>",[["&&"],"||",None]], #
+    #["==>","<=>",[["&&"],"||",None]], #
     [CWT("=/>","t"),CWT("</>","t"),[[CWT("&/","t"),"&|"],"||",None]], ##
-    ["=|>","<|>",[["&/","&|"],"||",None]], #
+    #["=|>","<|>",[["&/","&|"],"||",None]], #
     #[CWT("=\>","t"),None ,[["&/","&|"],"||",None]] ###
 ]
 
@@ -653,31 +655,45 @@ for [copAsym,copSym,[ConjCops,DisjCop,MinusCops]] in CopulaTypes:
         if cop == None:
             continue
 
+        copZ = ival(cop,"z")
+
         for ConjCop in ConjCops:
             for [junc,[TruthSet1,TruthSet2],[TruthDecomp1,TruthDecomp2]] in [[ConjCop,["union","intersection"],["decomposeNPP","decomposePNN"]],
                                                                              [DisjCop,["intersection","union"],["decomposePNN","decomposeNPP"]]]:
-                if junc != None:
-                    pass
-                    if junc == ConjCop:
-                        pass
-                        # commented because it only consumes a single premise on the left side! - we haven't implemented this case
-                        #print "A,\t\t((" + junc + " A C) "+copZ+" B)\t\t|-\t(C "+ copZ + " B)\t\t(Truth:Deduction"+(tParam.replace("-","+") if copAsymHasTimeOffset else "")+")"
+                if junc == None:
+                    continue
 
-                    if not isinstance(cop, CWT): # is disabled for temporal inference until we can traverse & build these complicated binary terms
+                if junc == ConjCop:
+                    pass
+                    # commented because it only consumes a single premise on the left side! - we haven't implemented this case
+                    #print "A,\t\t((" + junc + " A C) "+copZ+" B)\t\t|-\t(C "+ copZ + " B)\t\t(Truth:Deduction"+(tParam.replace("-","+") if copAsymHasTimeOffset else "")+")"
+
+                if not isinstance(cop, CWT): # is disabled for temporal inference until we can traverse & build these complicated binary terms
+
+                    
+                    for enableSetForm in [False]: #([True, False] if cop == "-->" else [False]): # TODO< add False >
+                        def setFormSubj(): # returns the form of the set of the conclusions
+                            if enableSetForm:
+                                return "R"
+                            return (junc,"A", "C")
+
+                        def setFormPred():
+                            if enableSetForm:
+                                return "R"
+                            return (junc,"B", "C")
 
                         if True:
                             #print "(A "+cop+" B),\t(C "+copZ+" B)\t\t\t|-\t((" + junc + " A C) "+ cop + " B) \t" + TruthSet1 + IntervalProjection+")"
-                            gen(("A",cop,"B"),("C",copZ,"B"),   [],((junc,"A", "C"), cop, "B"),  (TruthSet1, IntervalProjection), "")
+                            gen(("A",cop,"B"),("C",copZ,"B"),   (["extset?(A)",TruthSet2+"(A,B,R)"] if enableSetForm else []),(setFormSubj(), cop, "B"),  (TruthSet1, IntervalProjection), "")
 
-                        if True:
                             #print "(A "+cop+" B),\t(A "+copZ+" C)\t\t\t|-\t(A "+ cop + " (" + junc + " B C)) \t"  + TruthSet2 + IntervalProjection+")"
-                            gen(("A",cop,"B"),("A",copZ,"C"),   [],("A",cop,(junc,"B", "C")),  (TruthSet2, IntervalProjection), "")
+                            gen(("A",cop,"B"),("A",copZ,"C"),   (["intset?(B)",TruthSet1+"(B,C,R)"] if enableSetForm else []),("A",cop,setFormPred()),  (TruthSet2, IntervalProjection), "")
 
-                        if True:
-                            gen(("S",cop,"M"),((junc,"S", "L"),copZ,"M"),    [],("L",cop,"M"),   (TruthDecomp1, IntervalProjection), "")
-                        
-                        if True:
-                            gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     [],("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
+                    if True:
+                        gen(("S",cop,"M"),((junc,"S", "L"),copZ,"M"),    [],("L",cop,"M"),   (TruthDecomp1, IntervalProjection), "")
+                    
+                    if True:
+                        gen(("M",cop,"S"),("M",copZ,(junc,"S","L")),     [],("M",cop,"L"),   (TruthDecomp2, IntervalProjection), "")
 
 print "  return rootTries;"
 print "}"
