@@ -379,6 +379,8 @@ bool attentionHasActiveTaskByStamp(shared WorkingMemory wm, shared Stamp stamp) 
 
 // called when the attention values have to get recomputed for the most important tasks
 void attentionUpdateQuick(shared WorkingMemory wm, long cycleCounter) {
+	bool debugVerbose = false;
+
 	// TODO< remove from array and insert again with insertion sort >
 
 	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
@@ -390,14 +392,16 @@ void attentionUpdateQuick(shared WorkingMemory wm, long cycleCounter) {
 		// TODO< implement setting of weighted accumulator to 0.0 >
 	}
 
-	// debug
-	foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
-		writeln(
-			"attention: updated ranking of " ~
-			"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ iTaskWithAttention.task.sentence.stamp.convToStr() ~ " " ~
-			"to ranking=" ~ to!string(iTaskWithAttention.calcRanking(cycleCounter))
-		);
+	if (debugVerbose) {
+		foreach(shared TaskWithAttention iTaskWithAttention; wm.activeTasks) {
+			writeln(
+				"attention: updated ranking of " ~
+				"task.sentence=" ~ iTaskWithAttention.task.sentence.convToStr() ~" " ~ iTaskWithAttention.task.sentence.stamp.convToStr() ~ " " ~
+				"to ranking=" ~ to!string(iTaskWithAttention.calcRanking(cycleCounter))
+			);
+		}
 	}
+
 }
 
 // task with ema of activation
@@ -466,6 +470,8 @@ void attentionRemoveIrrelevantConcepts(shared Memory mem) {
 		return;
 	}
 
+	bool debugForgettingVerbose = false;
+
 	long numberOfConceptsToRemove = mem.concepts.retSize() - mem.maxNumberOfConcepts;
 
 	class RemoveConceptEntity {
@@ -509,7 +515,10 @@ void attentionRemoveIrrelevantConcepts(shared Memory mem) {
 		}
 
 		foreach(RemoveConceptEntity iCandidate; candidates) {
-			writeln("forgot concept term=", iCandidate.concept.name.convToStrRec(), " beliefs.avgExp=", iCandidate.concept.cachedAverageExp);
+			
+			if (debugForgettingVerbose) {
+				writeln("forgot concept term=", iCandidate.concept.name.convToStrRec(), " beliefs.avgExp=", iCandidate.concept.cachedAverageExp);
+			}
 
 			mem.concepts.removeAt(iCandidate.conceptIdx);
 		}
@@ -727,7 +736,7 @@ shared class Reasoner {
 
 			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
 
-			bool showDerivations = true;
+			bool showDerivations = false;
 
 			if (showDerivations) {
 				foreach(shared Sentence iDerivedSentence; derivedSentences) {
@@ -781,7 +790,7 @@ shared class Reasoner {
 	}
 
 	public void singleCycle() {
-		bool debugVerbose = true;
+		bool debugVerbose = false;
 
 		if (debugVerbose)  writeln("singleCycle() ENTRY");
 		scope(exit)  if (debugVerbose)  writeln("singleCycle() EXIT");
@@ -1155,8 +1164,6 @@ bool interpretTrieRec(
 	}
 	else if(trieElement.type == TrieElement.EnumType.PRECONDITION) {
 
-		writeln("DBG precondition");
-
 		if (trieElement.stringPayload == "Time:After(tB,tA)" || trieElement.stringPayload == "Time:Parallel(tB,tA)") {
 			if (leftSentence.stamp.occurrenceTime.isNull || rightSentence.stamp.occurrenceTime.isNull) {
 				return false; // no timestamp - precondition failed
@@ -1168,10 +1175,6 @@ bool interpretTrieRec(
 				if( !isPreconditionFullfilled ) {
 					return false; // propagate failure
 				}
-
-				writeln("DBG Time:After(tB,tA) ", isPreconditionFullfilled);
-
-
 			}
 			else if(trieElement.stringPayload == "Time:Parallel(tB,tA)") {
 				if( !occurrenceTimeIsParallel(rightSentence.stamp.occurrenceTime, leftSentence.stamp.occurrenceTime)) {

@@ -148,7 +148,5 @@ double calcExp(shared TruthValue tv) {
 double calcProjectedConf(long timeA, long timeB) {
 	long diff = abs(timeA - timeB);
 
-	writeln("calcProj diff = " ~to!string(diff));
-
 	return pow(2.0, -diff * 0.003);
 }
