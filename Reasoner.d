@@ -107,7 +107,7 @@ void testTemporalInduction1() {
 	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
 
-	foreach(int iRepetition; 0..10) {
+	foreach(int iRepetition; 0..5) {
 
 		foreach(string iTermName; ["A","B","C","D","E"]) {
 			{
@@ -124,7 +124,8 @@ void testTemporalInduction1() {
 
 	}
 
-	foreach(long i;0..1000) {
+
+	foreach(long i;0..1000000) {
 		reasoner.singleCycle();
 	}
 
@@ -762,7 +763,7 @@ shared class Reasoner {
 	// called when ever new conclusions were derived which have to get stored
 	synchronized protected void derivedConclusions(shared(Sentence)[] derivedSentences, shared TaskWithAttention selectedTaskWithAttention) {
 		{ // debug
-			if(true)   writeln("derived sentences#=", derivedSentences.length);
+			if(false)   writeln("derived sentences#=", derivedSentences.length);
 
 			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
 
@@ -1606,7 +1607,12 @@ string convToStrRec(shared Term term) {
 	}
 	else if (cast(shared Binary)term !is null) {
 		auto binary = cast(shared Binary)term;
-		return "<" ~ convToStrRec(binary.subject) ~ binary.copula ~ convToStrRec(binary.predicate) ~ ">";
+		
+		bool isCompound = binary.copula == "&/" || binary.copula == "&|" || binary.copula == "&&" || binary.copula == "||" || binary.copula == "-" || binary.copula == "~";
+
+		if (isCompound) return "(" ~ binary.copula ~ "," ~ convToStrRec(binary.subject) ~ "," ~ convToStrRec(binary.predicate) ~ ")";
+		else 		    return "<" ~ convToStrRec(binary.subject) ~ binary.copula ~ convToStrRec(binary.predicate) ~ ">";
+
 	}
 	else if (cast(shared Interval)term !is null) {
 		long intervalValue = (cast(shared Interval)term).retInterval();
