@@ -273,8 +273,6 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     if not emitExecCode:
         return # if we don't emit the code and just the inference rules with comments
 
-    # TODO< implement truth computation for time delta with projection >
-
     # build trie
     
 
