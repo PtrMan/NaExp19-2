@@ -75,29 +75,23 @@ void testTemporalInduction0() {
 	shared Reasoner reasoner = new shared Reasoner();
 	reasoner.init();
 
-	// trigger rule    ('&/', 'A', 't') =/> B), (('&/', 'C', 'z') =/> B)    |-   (('&/', 'A', 't') =/> C)
-
-	{ // add existing belief
+	// trigger rule    A  B  |-    <A =/>+5 B>
+	{
 		shared Term term = new shared AtomicTerm("A");
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = Stamp.makeEvent(reasoner.cycleCounter, [reasoner.mem.retUniqueStampCounter()]);
-		auto beliefSentence = new shared Sentence('.', term, tv, stamp);
+		
+		reasoner.event(term, tv);
+	}
 
-		reasoner.mem.conceptualize(beliefSentence.term);
-		reasoner.mem.addBeliefToConcepts(beliefSentence);
+	foreach(long i;0..5) {
+		reasoner.singleCycle();
 	}
 
 	{ // add task
 		shared Term term = new shared AtomicTerm("B");
 		auto tv = new shared TruthValue(1.0f, 0.9f);
-		auto stamp = Stamp.makeEvent(5, [reasoner.mem.retUniqueStampCounter()]); // fake occurence time
-		auto sentence = new shared Sentence('.', term, tv, stamp);
 
-		reasoner.mem.conceptualize(sentence.term);
-
-		auto task = new shared Task();
-		task.sentence = sentence;
-		reasoner.mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, 1.0, 1.0, reasoner.cycleCounter);
+		reasoner.event(term, tv);		
 	}
 
 	foreach(long i;0..60) {
@@ -747,7 +741,10 @@ shared class Reasoner {
 					emaFactor = selectedTaskWithAttention.emaFactor * derivedQuestionFactor;
 				}
 
-				double baseAttentionValue = selectedTaskWithAttention.ema.ema;
+				double baseAttentionValue = 0.0;
+				if (selectedTaskWithAttention !is null) {
+					baseAttentionValue = selectedTaskWithAttention.ema.ema;
+				}
 
 				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
 			}
@@ -780,7 +777,8 @@ shared class Reasoner {
 		
 		shared TaskWithAttention selectedTaskWithAttention;
 
-		{ // select task and process it with selected concepts
+		if(mem.workingMemory.activeTasks.length > 0) {
+			// select task and process it with selected concepts
 			
 			{ // select random task for processing
 				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
@@ -816,9 +814,9 @@ shared class Reasoner {
 					}
 				}
 			}
-		}
 
-		derivedConclusions(derivedSentences, selectedTaskWithAttention);
+			derivedConclusions(derivedSentences, selectedTaskWithAttention);
+		}
 
 
 		{ // debug notices after cycle
@@ -1692,9 +1690,10 @@ void induceByEvent(shared EventInducer inducer, shared Reasoner reasoner, shared
 
 		shared Sentence otherEvent = inducer.eventTable[chosenEventIndex];
 
+		writeln("DBG induceByEvent()  event=", event.convToStr(), " ", " otherEvent=", otherEvent.convToStr());
+
 		deriver.derive(event, otherEvent, derivedConclusions);
 	}
 
-	inducer.eventTable ~= event;
+	inducer.eventTable ~= event; // store event
 }
-

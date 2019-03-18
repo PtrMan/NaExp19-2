@@ -198,7 +198,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
             elif name == "t-z": # special case - is the time
                 return "new shared IntervalImpl(trieCtx.intervalPremiseT-trieCtx.intervalPremiseZ)"
             elif name == "tB-tA": # special case - we have to compute the difference of the timestamps
-                return "new shared IntervalImpl(trieCtx.occurrencetimePremiseA-trieCtx.occurrencetimePremiseB)"
+                return "new shared IntervalImpl(trieCtx.occurrencetimePremiseB-trieCtx.occurrencetimePremiseA)"
 
             resList = retPathOfName(name)
 
