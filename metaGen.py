@@ -32,7 +32,7 @@ class CWT(object):
 def isPlaceholder(string):
     return len(string) == 1 and string.istitle()
 
-emitExecCode = False # do we emit executable code?
+emitExecCode = True # do we emit executable code?
 
 staticFunctionCounter = 0
 
@@ -200,8 +200,6 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
             elif name == "tB-tA": # special case - we have to compute the difference of the timestamps
                 return "new shared IntervalImpl(trieCtx.occurrencetimePremiseA-trieCtx.occurrencetimePremiseB)"
 
-            print "DBG "+name
-
             resList = retPathOfName(name)
 
             if len(resList) == 1:
@@ -287,19 +285,33 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
     
     print "{"
-    print "    shared TrieElement te0 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
-    print "    te0.side = EnumSide.LEFT;"
-    print "    te0.checkedString = \""+escape(premiseACopula)+"\";"
-    print "    "
-    print "    shared TrieElement te1 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
-    print "    te1.side = EnumSide.RIGHT;"
-    print "    te1.checkedString = \""+escape(premiseBCopula)+"\";"
-    print "    te0.children ~= te1;"
-    print "    "
+
+    if isinstance(premiseA, tuple):
+        print "    shared TrieElement te0 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
+        print "    te0.side = EnumSide.LEFT;"
+        print "    te0.checkedString = \""+escape(premiseACopula)+"\";"
+        print "    "
+
+    if isinstance(premiseB, tuple):
+        print "    shared TrieElement te1 = new shared TrieElement(TrieElement.EnumType.CHECKCOPULA);"
+        print "    te1.side = EnumSide.RIGHT;"
+        print "    te1.checkedString = \""+escape(premiseBCopula)+"\";"
+        print "    te0.children ~= te1;"
+        print "    "
 
     teCounter = 2
 
-    if not isPlaceholder(premiseA[0]):
+
+    for iPrecondition in preconditions:
+        if iPrecondition == "Time:After(tB,tA)":
+            print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.PRECONDITION);"
+            print "    te"+str(teCounter)+".stringPayload = \"" + iPrecondition + "\";"
+            print "    te"+str(teCounter-1)+".children ~= te"+str(teCounter)+";"
+            print "    "
+        else:
+            raise Exception("not implemented precondition: "+iPrecondition)
+
+    if isinstance(premiseA, tuple) and not isPlaceholder(premiseA[0]):
         comparedCompoundType = premiseA[0][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
@@ -314,7 +326,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
         teCounter+=1
 
-    if not isPlaceholder(premiseA[2]):
+    if isinstance(premiseA, tuple) and not isPlaceholder(premiseA[2]):
         comparedCompoundType = premiseA[2][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
@@ -330,7 +342,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
         teCounter+=1
     
 
-    if not isPlaceholder(premiseB[0]):
+    if isinstance(premiseB, tuple) and not isPlaceholder(premiseB[0]):
         comparedCompoundType = premiseB[0][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
@@ -345,7 +357,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
 
         teCounter+=1
 
-    if not isPlaceholder(premiseB[2]):
+    if isinstance(premiseB, tuple) and not isPlaceholder(premiseB[2]):
         comparedCompoundType = premiseB[2][0]
 
         print "    shared TrieElement te"+str(teCounter)+" = new shared TrieElement(TrieElement.EnumType.WALKCHECKCOMPOUND);"
