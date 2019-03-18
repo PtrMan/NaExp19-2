@@ -63,34 +63,7 @@ import TruthValue : TruthValue, calcExp, calcProjectedConf;
 import std.digest.sha;
 
 void main() {
-	if(false){
-
-		shared Term term = new shared Binary("&/", new shared AtomicTerm("E"), new shared IntervalImpl(15));
-
-		writeln("hashA = ", term.retHash());
-		
-
-		
-		term = new shared Binary("&/", new shared AtomicTerm("E"), new shared IntervalImpl(30));
-
-		writeln("hashB = ", term.retHash());
-
-		writeln();
-
-		term = new shared AtomicTerm("E");
-		writeln("hashE = ", term.retHash());
-
-				term =  new shared IntervalImpl(30);
-		writeln("hash30 = ", term.retHash());
-
-						term =  new shared IntervalImpl(15);
-		writeln("hash15 = ", term.retHash());
-
-		ubyte[20] hash1 = sha1Of(to!string(10));
-		ulong n = *(cast(ulong*)&hash1);
-	}
-
-
+	
 	//test0();
 
 	//testQuestionDerivation0();
