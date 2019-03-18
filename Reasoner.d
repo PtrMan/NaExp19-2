@@ -681,6 +681,80 @@ shared class Reasoner {
 		deriver.init();
 	}
 
+	// called when ever a event happened
+	// is usually called from outside
+	/*
+	public void event(shared Term term, shared TruthValue tv) {
+		auto stamp = Stamp.makeEvent(cycleCounter, [reasoner.mem.retUniqueStampCounter()]);
+		auto eventSentence = new shared Sentence('.', term, tv, stamp);
+		reasoner.mem.conceptualize(eventSentence.term);
+
+
+		Sentences resultSentences = new Sentences();
+		inducer.induceByEvent(deriver, resultSentences, eventSentence); // reason about events with other events (or derived conclusions)
+		shared(Sentence)[] derivedSentences = resultSentences.arr;
+
+		derivedConclusions(derivedSentences, null);
+	}
+	 */
+
+	// called when ever new conclusions were derived which have to get stored
+	synchronized protected void derivedConclusions(shared(Sentence)[] derivedSentences, shared TaskWithAttention selectedTaskWithAttention) {
+		{ // debug
+			if(true)   writeln("derived sentences#=", derivedSentences.length);
+
+			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
+
+			bool showDerivations = true;
+
+			if (showDerivations) {
+				foreach(shared Sentence iDerivedSentence; derivedSentences) {
+					writeln("   derived ", iDerivedSentence.convToStr() ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
+				}
+			}
+		}
+
+		{ // put derived results into concepts
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
+				mem.conceptualize(iDerivedSentence.term);
+
+				if (iDerivedSentence.isJudgment()) {
+					auto subterms = enumerateTermsRec(iDerivedSentence.term);
+					foreach(shared Term iTerm; subterms) {
+						auto concept = mem.concepts.retConceptByName(iTerm);
+						updateBelief(concept, iDerivedSentence);
+					}
+				}
+				// TODO< put derived question into concepts >
+			}
+		}
+
+		{ // ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
+				auto task = new shared Task();
+				task.sentence = iDerivedSentence;
+				
+				bool isActiveByStamp = attentionHasActiveTaskByStamp(mem.workingMemory, task.sentence.stamp);
+				if (isActiveByStamp) {
+					continue; // we don't add it to the tasks if it was already derived
+					          // we check by stamp because it is a good way to make sure so
+				}
+
+				// compute base attention value by type of conclusion
+				// (1.0 if it is not a question, questions AV * factor)
+				double emaFactor = 1.0;
+				if (iDerivedSentence.isQuestion()) {
+					double derivedQuestionFactor = 0.9; // how much is the attention of a question punhished when it was drived from a parent question
+					emaFactor = selectedTaskWithAttention.emaFactor * derivedQuestionFactor;
+				}
+
+				double baseAttentionValue = selectedTaskWithAttention.ema.ema;
+
+				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
+			}
+		}
+	}
+
 	public void singleCycle() {
 		bool debugVerbose = true;
 
@@ -745,59 +819,7 @@ shared class Reasoner {
 			}
 		}
 
-		{ // debug
-			if(true)   writeln("derived sentences#=", derivedSentences.length);
-
-			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
-
-			bool showDerivations = true;
-
-			if (showDerivations) {
-				foreach(shared Sentence iDerivedSentence; derivedSentences) {
-					writeln("   derived ", iDerivedSentence.convToStr() ~ "  stamp=" ~ iDerivedSentence.stamp.convToStr());
-				}
-			}
-		}
-
-		{ // put derived results into concepts
-			foreach(shared Sentence iDerivedSentence; derivedSentences) {
-				mem.conceptualize(iDerivedSentence.term);
-
-				if (iDerivedSentence.isJudgment()) {
-					auto subterms = enumerateTermsRec(iDerivedSentence.term);
-					foreach(shared Term iTerm; subterms) {
-						auto concept = mem.concepts.retConceptByName(iTerm);
-						updateBelief(concept, iDerivedSentence);
-					}
-				}
-				// TODO< put derived question into concepts >
-			}
-		}
-
-		{ // ATTENTION< we need to spawn tasks for the derived results - but we need to manage attention with a activation value
-			foreach(shared Sentence iDerivedSentence; derivedSentences) {
-				auto task = new shared Task();
-				task.sentence = iDerivedSentence;
-				
-				bool isActiveByStamp = attentionHasActiveTaskByStamp(mem.workingMemory, task.sentence.stamp);
-				if (isActiveByStamp) {
-					continue; // we don't add it to the tasks if it was already derived
-					          // we check by stamp because it is a good way to make sure so
-				}
-
-				// compute base attention value by type of conclusion
-				// (1.0 if it is not a question, questions AV * factor)
-				double emaFactor = 1.0;
-				if (iDerivedSentence.isQuestion()) {
-					double derivedQuestionFactor = 0.9; // how much is the attention of a question punhished when it was drived from a parent question
-					emaFactor = selectedTaskWithAttention.emaFactor * derivedQuestionFactor;
-				}
-
-				double baseAttentionValue = selectedTaskWithAttention.ema.ema;
-
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
-			}
-		}
+		derivedConclusions(derivedSentences, selectedTaskWithAttention);
 
 
 		{ // debug notices after cycle
@@ -1799,3 +1821,28 @@ shared(Term[]) sampleFromArray(shared(Term[]) arr, int numberOfSamples, ref Xors
 	}
 	return sampledResult;
 }
+
+
+
+/*
+// induce input events to conclusions and feeds it into the reasoner
+class EventInducer {
+	// TODO< rewrite to table with utility function based on conf and time distance >
+	shared(Sentence)[] eventTable;
+}
+
+void induceByEvent(EventInducer inducer, shared TrieDeriver deriver, Sentences derivedConclusions, shared Sentence event) {
+	if (inducer.eventTable.length > 0) {
+		Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))reasoner.rng;
+		long chosenEventIndex = uniform(0, inducer.eventTable.length, rng2);
+		reasoner.rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
+
+		Sentence otherEvent = inducer.eventTable[chosenEventIndex];
+
+		Sentences derivedConclusions;
+		deriver.derive(event, otherEvent, derivedConclusions);
+	}
+
+	inducer.eventTable ~= event;
+}
+*/
