@@ -825,7 +825,12 @@ shared class Reasoner {
 					baseAttentionValue = selectedTaskWithAttention.ema.ema;
 				}
 
-				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
+
+				auto createdTask = new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
+
+				auto arr = cast(TaskWithAttention[])mem.workingMemory.activeTasks; // HACK< needs some casting because the standard library doesn't define insertInPlace for shared objects ! >
+				arr.insertInPlace(0, cast(TaskWithAttention)createdTask);
+				mem.workingMemory.activeTasks = cast(shared(TaskWithAttention)[])arr;
 			}
 		}
 
@@ -866,13 +871,29 @@ shared class Reasoner {
 
 		if(mem.workingMemory.activeTasks.length > 0) {
 			// select task and process it with selected concepts
-			
-			{ // select random task for processing
-				Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
-				long chosenTaskIndex = uniform(0, mem.workingMemory.activeTasks.length, rng2);
-				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
-				selectedTaskWithAttention = mem.workingMemory.activeTasks[chosenTaskIndex];
+
+			{
+				long mode;
+				{
+					Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
+					mode = uniform(0, 0xFF, rng2);
+					rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
+				}
+
+				// attention: select the highest prioritized or most recent tasks with a high priority
+				long selectedLength = mem.workingMemory.activeTasks.length;
+				if (mode < 0xE0) {
+					selectedLength = min(256, selectedLength);
+				}
+
+				{ // select random task for processing
+					Xorshift rng2 = cast(XorshiftEngine!(uint, 128u, 11u, 8u, 19u))rng;
+					long chosenTaskIndex = uniform(0, selectedLength, rng2);
+					rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
+					selectedTaskWithAttention = mem.workingMemory.activeTasks[chosenTaskIndex];
+				}
 			}
+			
 
 			// do test inference and look at the result (s)
 
