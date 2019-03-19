@@ -19,12 +19,12 @@ Non-Axiomatic Logic based reasoner Experimental system.
 * Experience-grounded semantics from (Open)NARS.
 
 * logic is based on NAL
-* logic is implemented with a [https://groups.google.com/forum/#!topic/open-nars/bMp0jKUZNK8](Rule-compiler). It translates the rules to Trie-nodes which can be interpreted fast for each derivation.
+* logic is implemented with a [Rule-compiler](https://groups.google.com/forum/#!topic/open-nars/bMp0jKUZNK8). It translates the rules to Trie-nodes which can be interpreted fast for each derivation.
 
-* timespan between events is computed as a exponential decay like in [https://github.com/patham9/ANSNA](ANSNA) - this emerges naturally if timesteps are interpreted as terms in a similarity derivation <a<->b> <b<->c> | <a<->c>
+* timespan between events is computed as a exponential decay like in [ANSNA](https://github.com/patham9/ANSNA) - this emerges naturally if timesteps are interpreted as terms in a similarity derivation <a<->b> <b<->c> | <a<->c>
 
 ## Control system
-It borrows some control strategy principles from [https://github.com/opennars/ALANN2018](ALANN2018) , especially
+It borrows some control strategy principles from [ALANN2018](https://github.com/opennars/ALANN2018) , especially
 * using the truth (confidence) as a proxy for long term usefulness of items
 * derivations are treated as if they were items
 
