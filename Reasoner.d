@@ -123,7 +123,7 @@ void testTemporalInduction1() {
 	}
 
 
-	foreach(long i;0..50000) {
+	foreach(long i;0..200000) {
 		reasoner.singleCycle();
 	}
 
@@ -909,6 +909,7 @@ shared class Reasoner {
 				auto sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng2);
 				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 				
+				/*
 				// helper function which does the inference concurrently
 				static shared(Sentence)[] parallelInfer(shared Memory mem, shared Task selectedTask, shared TrieDeriver deriver, shared Term iSampledTerm) {
 					if (!mem.concepts.hasConceptByName(iSampledTerm)) {
@@ -931,8 +932,9 @@ shared class Reasoner {
 				foreach(std.parallelism.Task!(parallelInfer, shared(Memory), shared(Task), shared(TrieDeriver), shared(Term))* iInfer; parallelInfers) {
 					derivedSentences ~= iInfer.yieldForce;
 				}
+				// */
 
-				/* commented because it is the not parallel version
+				//* commented because it is the not parallel version
 				{ // do inference for the concepts named by sampledTerms
 					foreach(shared Term iSampledTerm; sampledTerms) {
 						if (!mem.concepts.hasConceptByName(iSampledTerm)) {
@@ -945,7 +947,7 @@ shared class Reasoner {
 						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver).arr;
 					}
 				}
-				 */
+				// */
 			}
 
 			derivedConclusions(derivedSentences, selectedTaskWithAttention);
@@ -1539,6 +1541,12 @@ bool isSameRec(shared Term a, shared Term b) {
 		if (a2.copula != b2.copula) {
 			return false;
 		}
+
+		// makes sure that both big hashes are the same - the probability of false positives is extremely low
+		return a2.hash0 == b2.hash0 && a2.hash1 == b2.hash1;
+
+		//return true; // makes it way faster
+		/* super slow path
 		bool isSame = isSameRec(a2.subject, b2.subject) && isSameRec(a2.predicate, b2.predicate);
 
 		if (!isSame) {
@@ -1548,6 +1556,7 @@ bool isSameRec(shared Term a, shared Term b) {
 		}
 
 		return isSame;
+		 */
 	}
 	else if(aType == 'i' && bType == 'i') {
 		auto a2 = cast(shared Interval)a;

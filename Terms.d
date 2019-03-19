@@ -106,6 +106,7 @@ class Binary : BinaryTerm {
 		this.subject = subject;
 		this.predicate = predicate;
 
+		/*
 		ulong hash = subject.retHash();
         hash = (hash << 3) | (hash >> (64-3)); // rotate
         hash ^= 0x34052AAB34052AAB;
@@ -115,8 +116,17 @@ class Binary : BinaryTerm {
         hash ^= 0x34052AAB34052AAB;
         
         hash ^= calcHash(copula);
+        */
+
+        ubyte[20] hash0 = sha1Of(to!string(to!string(subject.retHash()) ~ copula ~ to!string(predicate.retHash())));
+        ubyte[20] hash1 = sha1Of(to!string("1" ~ to!string(subject.retHash()) ~ copula ~ to!string(predicate.retHash())));
+
+		ulong hash = *(cast(ulong*)&hash0);
 
 		cachedHash = hash;
+
+		this.hash0 = hash0.idup;
+		this.hash1 = hash1.idup;
 	}
 
 	public char retType() shared {return 'b';}
@@ -128,6 +138,9 @@ class Binary : BinaryTerm {
 	public immutable string copula;
 	public shared Term subject; // TODO< make immutable >
 	public shared Term predicate; // TODO< make immutable >
+
+	public immutable ubyte[20] hash0;
+	public immutable ubyte[20] hash1;
 
 	private immutable ulong cachedHash;
 }
