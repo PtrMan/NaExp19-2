@@ -50,5 +50,5 @@ An extreme form of loosing the competition is forgetting because the utility was
 
 # implemented featureset
 
-* a lot of rules for NAL1 - NAL8 are already implemented
+* a lot of rules for NAL-1,NAL-2,NAL-3, NAL-5-NAL-8 are already implemented
 * implementation of attention system should be sufficient enough for small scale experiments
