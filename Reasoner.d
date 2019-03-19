@@ -724,6 +724,10 @@ public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief)
 	addBeliefRec(belief.term);
 }
 
+interface ConclusionListener {
+	void conclusion(shared Sentence sentence) shared;
+}
+
 shared class Reasoner {
 	public Xorshift rng = Xorshift(12);
 
@@ -734,12 +738,18 @@ shared class Reasoner {
 	long cycleCounter = 0;
 	long numberOfDerivationsCounter = 0;
 
+	protected shared(ConclusionListener)[] conclusionListeners;
+
 	public this() {
 		mem = new shared Memory();
 	}
 
 	public void init() {
 		deriver.init();
+	}
+
+	public void registerListener(shared ConclusionListener listener) {
+		conclusionListeners ~= listener;
 	}
 
 	// called when ever a event happened
@@ -813,6 +823,14 @@ shared class Reasoner {
 				}
 
 				mem.workingMemory.activeTasks ~= new shared TaskWithAttention(task, baseAttentionValue, emaFactor, cycleCounter);
+			}
+		}
+
+		{ // send to listeners
+			foreach(shared Sentence iDerivedSentence; derivedSentences) {
+				foreach(shared ConclusionListener iListener; conclusionListeners) {
+					iListener.conclusion(iDerivedSentence);
+				}
 			}
 		}
 	}
