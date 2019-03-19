@@ -1,4 +1,4 @@
-Non-Axiomatic Logic based reasoner Experimental system.
+Non-Axiomatic Logic based reasoner experimental system
 
 * first in providing a useable Rule-compiler
 * first in providing a OSS implementation of a native system based on NAL
@@ -16,7 +16,7 @@ Non-Axiomatic Logic based reasoner Experimental system.
 
 # Origins
 
-* Experience-grounded semantics from (Open)NARS.
+* Experience-grounded semantics like in [(Open)NARS](https://github.com/opennars/opennars)
 
 * logic is based on NAL
 * logic is implemented with a [Rule-compiler](https://groups.google.com/forum/#!topic/open-nars/bMp0jKUZNK8). It translates the rules to Trie-nodes which can be interpreted fast for each derivation.
@@ -24,7 +24,7 @@ Non-Axiomatic Logic based reasoner Experimental system.
 * timespan between events is computed as a exponential decay like in [ANSNA](https://github.com/patham9/ANSNA) - this emerges naturally if timesteps are interpreted as terms in a similarity derivation <a<->b> <b<->c> | <a<->c>
 
 ## Control system
-It borrows some control strategy principles from [ALANN2018](https://github.com/opennars/ALANN2018) , especially
+It borrows some control strategy principles from [ALANN2018](https://github.com/opennars/ALANN2018) , especially:
 * using the truth (confidence) as a proxy for long term usefulness of items
 * derivations are treated as if they were items
 
@@ -33,22 +33,22 @@ An extreme form of loosing the competition is forgetting because the utility was
 
 # Project goals
 
-* proof of concept of meta-rule language compiler and trie deriver.
+* proof of concept of meta-rule language compiler and trie deriver
 * experiment of custom attention system
 
-## Maintainable code
+## maintainable code
 * codebase is relativly small compared to its feature set and optimization. This is only possible because of the rule-generation(less lines of code for inference) and choice of language(s).
 * control strategy is very compactly encoded and easy to change
 * Zero dependencies (except standard library)
 
-## Memory efficiency
+## memory efficiency
 * Stamps are not excessivly copied, evidential trails are shared if possible.
 * Terms can reference each other recursivly, they are only copied if necessary
 
-## Native speed
+## native speed
 * No VM, JIT or language which compiles down to bytecode
 
-# Implemented featureset
+# implemented featureset
 
-* a lot of rules for NAL1 - NAL8 are already implemented.
+* a lot of rules for NAL1 - NAL8 are already implemented
 * implementation of attention system should be sufficient enough for small scale experiments
