@@ -724,9 +724,11 @@ public final void addBeliefToConcepts(shared Memory mem, shared Sentence belief)
 	addBeliefRec(belief.term);
 }
 
-interface ConclusionListener {
-	void conclusion(shared Sentence sentence) shared;
+interface SentenceListener {
+	void invoke(shared Sentence sentence) shared;
 }
+
+interface ConclusionListener : SentenceListener {}
 
 shared class Reasoner {
 	public Xorshift rng = Xorshift(12);
@@ -829,7 +831,7 @@ shared class Reasoner {
 		{ // send to listeners
 			foreach(shared Sentence iDerivedSentence; derivedSentences) {
 				foreach(shared ConclusionListener iListener; conclusionListeners) {
-					iListener.conclusion(iDerivedSentence);
+					iListener.invoke(iDerivedSentence);
 				}
 			}
 		}
