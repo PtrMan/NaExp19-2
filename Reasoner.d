@@ -19,6 +19,7 @@ import std.conv : to;
 //import core.sync.mutex;
 import core.atomic;
 import std.typecons : Nullable;
+import std.parallelism;
 
 import Stamp : Stamp;
 import TruthValue : TruthValue, calcExp, calcProjectedConf;
@@ -26,13 +27,13 @@ import Terms : Term, Interval, IntervalImpl, Binary, BinaryTerm, AtomicTerm, isA
 
 void main() {
 	
-	test0(1000);
+	//test0(1000);
 
 	//testQuestionDerivation0();
 	//testTemporalSimple0();
 
 	//testTemporalInduction1();
-	//testTemporalInduction1();
+	testTemporalInduction1();
 
 	//testMaze0();
 }
@@ -122,7 +123,7 @@ void testTemporalInduction1() {
 	}
 
 
-	foreach(long i;0..5000) {
+	foreach(long i;0..50000) {
 		reasoner.singleCycle();
 	}
 
@@ -776,7 +777,7 @@ shared class Reasoner {
 
 			core.atomic.atomicOp!"+="(this.numberOfDerivationsCounter, derivedSentences.length);
 
-			bool showDerivations = true;
+			bool showDerivations = false;
 
 			if (showDerivations) {
 				foreach(shared Sentence iDerivedSentence; derivedSentences) {
@@ -887,6 +888,30 @@ shared class Reasoner {
 				auto sampledTerms = sampleFromArray(termAndSubtermsOfSentenceOfTask, numberOfSampledTerms, rng2);
 				rng = cast(shared(XorshiftEngine!(uint, 128u, 11u, 8u, 19u)))rng2;
 				
+				// helper function which does the inference concurrently
+				static shared(Sentence)[] parallelInfer(shared Memory mem, shared Task selectedTask, shared TrieDeriver deriver, shared Term iSampledTerm) {
+					if (!mem.concepts.hasConceptByName(iSampledTerm)) {
+						return [];
+					}
+
+					auto selectedConcept = mem.concepts.retConceptByName(iSampledTerm);
+
+					//if(debugVerbose)   writeln("reasoning: infer for task.sentence=" ~ selectedTask.sentence.convToStr() ~ " concept.name=" ~ convToStrRec(selectedConcept.name));
+					return mem.infer(selectedTask, selectedConcept, deriver).arr;
+				}
+
+				std.parallelism.Task!(parallelInfer, shared(Memory), shared(Task), shared(TrieDeriver), shared(Term))*[] parallelInfers;
+				foreach(shared Term iSampledTerm; sampledTerms) {
+					auto task = std.parallelism.task!parallelInfer(mem, selectedTask, deriver, iSampledTerm);
+					taskPool.put(task); //task.executeInNewThread();
+					parallelInfers ~= task;
+				}
+
+				foreach(std.parallelism.Task!(parallelInfer, shared(Memory), shared(Task), shared(TrieDeriver), shared(Term))* iInfer; parallelInfers) {
+					derivedSentences ~= iInfer.yieldForce;
+				}
+
+				/* commented because it is the not parallel version
 				{ // do inference for the concepts named by sampledTerms
 					foreach(shared Term iSampledTerm; sampledTerms) {
 						if (!mem.concepts.hasConceptByName(iSampledTerm)) {
@@ -899,6 +924,7 @@ shared class Reasoner {
 						derivedSentences ~= mem.infer(selectedTask, selectedConcept, deriver).arr;
 					}
 				}
+				 */
 			}
 
 			derivedConclusions(derivedSentences, selectedTaskWithAttention);
@@ -947,7 +973,7 @@ class TrieDeriver {
 	}
 
 	final shared void derive(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences) {
-		bool debugVerbose = true;
+		bool debugVerbose = false;
 
 		if (debugVerbose) {
 			writeln("TrieDeriver.derive()");
