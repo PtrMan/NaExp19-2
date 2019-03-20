@@ -27,7 +27,7 @@ import Terms : Term, Interval, IntervalImpl, Binary, BinaryTerm, AtomicTerm, isA
 
 void main() {
 	
-	//test0(1000);
+	//test0(3000);
 
 	//testQuestionDerivation0();
 	//testTemporalSimple0();
@@ -1467,10 +1467,13 @@ void updateBelief(shared Concept concept, shared Sentence belief) {
 				auto revisedTruth = TruthValue.calc("revision", belief.truth, iBelief.truth);
 				auto revisedBelief = new shared Sentence('.', belief.term, revisedTruth, mergedStamp);
 
-				concept.beliefs.entries[beliefIdx] = revisedBelief;
+				////concept.beliefs.entries[beliefIdx] = revisedBelief;
+
+				// we need to remove and add it because the exp() changed and thus the ordering
+				concept.beliefs.entries = concept.beliefs.entries.remove(beliefIdx);
+				addBeliefToConcept(concept, revisedBelief);				
 
 				beliefWasUpdatedOrAdded(concept, revisedBelief);
-
 				return;
 			}
 		}
@@ -1690,12 +1693,76 @@ class ExpPriorityTable {
 
 	// doesn't limit size!
 	public shared void insertByExp(shared Sentence inserted) {
-		// TODO< use binary search because the entities are sorted by expectation anyways >
+		// DEBUG< make sure the invariant is not violated!
+		if(false){
+			for(int idx2=0;idx2<cast(int)entries.length-1;idx2++) {
+				if(entries[idx2].truth.calcExp() < entries[idx2+1].truth.calcExp() ) {
+					for(int idx3=0;idx3<entries.length;idx3++) {
+						writeln("   ", entries[idx3].truth.calcExp());
+					}
 
-		if(false) {
-			// TODO DEBUG < check if all entities are sorted >
+					throw new Exception("ENTRY   exp() invariant was violated!");
+				}
+			}
 		}
 
+
+
+
+		//writeln("insert w/ exp=", inserted.truth.calcExp());
+		//writeln("into");
+		//
+		//for(int idx3=0;idx3<entries.length;idx3++) {
+		//	writeln("   [",idx3, "]  ", entries[idx3].truth.calcExp());
+		//}
+
+		// use binary search because the entities are sorted by expectation anyways
+
+		int idxHigh = cast(int)entries.length-1;
+		int idxLow = 0;
+
+		for(;;) {
+			//writeln(idxLow, " ", idxHigh);
+
+			if (idxHigh <= idxLow) {
+				break;
+			}
+
+			if (idxLow == idxHigh - 1) {
+				break;
+			}
+
+			int idxMid = (idxHigh + idxLow) / 2;
+
+			double expMid = entries[idxMid].truth.calcExp();
+
+			if (inserted.truth.calcExp() > expMid) {
+				idxLow = idxLow;
+				idxHigh = idxMid;
+			}
+			else {
+				idxLow = idxMid;
+				idxHigh = idxHigh;
+			}
+		}
+
+		int idx = idxLow;
+
+		// scan for index where we can insert
+		for(;idx<entries.length;idx++) {
+			auto iElement = entries[idx];
+			if(iElement.truth.calcExp() < inserted.truth.calcExp()) {
+				break;
+			}
+		}
+
+		//writeln("IDX ", idx);
+
+		auto arr = cast(Sentence[])entries; // HACK< needs some casting because the standard library doesn't define insertInPlace for shared Sentences ! >
+		arr.insertInPlace(idx, cast(Sentence)inserted);
+		entries = cast(shared(Sentence)[])arr;
+
+		/*
 
 		for(int idx=0;idx<entries.length;idx++) {
 			auto iElement = entries[idx];
@@ -1708,6 +1775,20 @@ class ExpPriorityTable {
 		}
 
 		entries ~= inserted;
+		*/
+
+		if(false) {
+			// DEBUG< make sure the invariant is not violated!
+			for(int idx2=0;idx2<cast(int)entries.length-1;idx2++) {
+				if(entries[idx2].truth.calcExp() < entries[idx2+1].truth.calcExp() ) {
+					for(int idx3=0;idx3<entries.length;idx3++) {
+						writeln("   ", entries[idx3].truth.calcExp());
+					}
+
+					throw new Exception("exp() invariant was violated!");
+				}
+			}
+		}
 	}
 
 	public shared void limitSize() {
