@@ -20,6 +20,7 @@ import std.conv : to;
 import core.atomic;
 import std.typecons : Nullable;
 import std.parallelism;
+import std.concurrency;
 
 import Stamp : Stamp;
 import TruthValue : TruthValue, calcExp, calcProjectedConf;
@@ -731,12 +732,34 @@ interface SentenceListener {
 
 interface ConclusionListener : SentenceListener {}
 
+// working for updating beliefs into concepts
+void workerFunc() {
+    bool isDone = false;
+
+    while (!isDone) {
+        void handler(shared Memory mem, shared Sentence iDerivedSentence, shared(Term)[] subterms) {
+            foreach(shared Term iTerm; subterms) {
+				auto concept = mem.concepts.retConceptByName(iTerm);
+				updateBelief(concept, iDerivedSentence);
+			}
+
+			ownerTid.send(cast(int)0); // send message to indicate completion
+        }
+
+        auto msg = receiveOnly!(shared Memory, shared Sentence, shared(Term)[])();
+        handler(msg[0], msg[1], msg[2]);
+    }
+}
+
+
 shared class Reasoner {
 	public Xorshift rng = Xorshift(12);
 
 	shared Memory mem;
 	TrieDeriver deriver = new TrieDeriver();
 	EventInducer inducer = new EventInducer();
+
+	shared Tid worker;
 
 	long cycleCounter = 0;
 	long numberOfDerivationsCounter = 0;
@@ -745,6 +768,8 @@ shared class Reasoner {
 
 	public this() {
 		mem = new shared Memory();
+
+		worker = cast(shared Tid)spawn(&workerFunc);
 	}
 
 	public void init() {
@@ -793,10 +818,14 @@ shared class Reasoner {
 				if (iDerivedSentence.isJudgment()) {
 					auto subterms = enumerateUniqueTermsRec(iDerivedSentence.term);
 					
-					foreach(shared Term iTerm; subterms) {
+					(cast(Tid)worker).send(mem, iDerivedSentence, subterms[0..subterms.length/2]);
+
+					foreach(shared Term iTerm; subterms[subterms.length/2..$]) {
 						auto concept = mem.concepts.retConceptByName(iTerm);
 						updateBelief(concept, iDerivedSentence);
 					}
+
+					int result = receiveOnly!int();
 				}
 				// TODO< put derived question into concepts >
 			}
