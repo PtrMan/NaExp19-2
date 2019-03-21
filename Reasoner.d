@@ -395,6 +395,12 @@ void test0(int numberOfCycles) {
  */
 class WorkingMemory {
 	TaskWithAttention[] activeTasks;
+
+	public long maxNumberOfTasks = 200000; // Reasoner parameter!
+}
+
+void attentionTasksLimit(shared WorkingMemory wm) {
+	wm.activeTasks = wm.activeTasks[0..min(wm.activeTasks.length, wm.maxNumberOfTasks)];
 }
 
 // checks if a task with the specific stamp is already in the list of active tasks
@@ -886,6 +892,26 @@ shared class Reasoner {
 		{ // attention - we need to update the AV of highly prioritized items
 			if ((cycleCounter % 50) == 0) {
 				attentionUpdateQuick(mem.workingMemory, cycleCounter);
+			}
+		}
+
+		{ // attention - we need to sort high priority items
+			if ((cycleCounter % 100) == 0) {
+				// TODO< sort upper section of tasks
+			}
+		}
+
+		{ // attention - we need to sort all items
+			if ((cycleCounter % 5000) == 0) {
+				auto calcRanking2 = (shared TaskWithAttention a, shared TaskWithAttention b) => a.calcRanking(cycleCounter) > b.calcRanking(cycleCounter);
+
+				mem.workingMemory.activeTasks.sort!(calcRanking2);
+			}
+		}
+
+		{ // attention - we need to limit the number of tasks
+			if ((cycleCounter % 5000) == 0) {
+				mem.workingMemory.attentionTasksLimit();
 			}
 		}
 
