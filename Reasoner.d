@@ -791,7 +791,8 @@ shared class Reasoner {
 				mem.conceptualize(iDerivedSentence.term);
 
 				if (iDerivedSentence.isJudgment()) {
-					auto subterms = enumerateTermsRec(iDerivedSentence.term);
+					auto subterms = enumerateUniqueTermsRec(iDerivedSentence.term);
+					
 					foreach(shared Term iTerm; subterms) {
 						auto concept = mem.concepts.retConceptByName(iTerm);
 						updateBelief(concept, iDerivedSentence);
@@ -1494,13 +1495,34 @@ class Task {
 //////////////////////////
 // term helpers
 
+// enumerates terms recursivly and returns only the unique terms of it
+shared(Term)[] enumerateUniqueTermsRec(shared Term term) {
+	shared(Term)[] result;
+
+	bool existsInResult(shared Term term) {
+		foreach(iTerm; result) {
+			if (isSameRec(iTerm, term)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	auto enumeratedSubterms = enumerateTermsRec(term);
+	foreach(iTerm; enumeratedSubterms) {
+		if (!existsInResult(iTerm)) {
+			result ~= iTerm;
+		}
+	}
+	return result;
+}
+
 // enumerate terms recursivly
-shared(Term[]) enumerateTermsRec(shared Term term) {
+shared(Term)[] enumerateTermsRec(shared Term term) {
 	if (cast(shared BinaryTerm)term !is null) {
 		auto binary = cast(shared Binary)term; // TODO< cast to binaryTerm and use methods to access children >
 
-		shared(Term[]) enumSubj = enumerateTermsRec(binary.subject);
-		shared(Term[]) enumPred = enumerateTermsRec(binary.predicate);
+		shared(Term)[] enumSubj = enumerateTermsRec(binary.subject);
+		shared(Term)[] enumPred = enumerateTermsRec(binary.predicate);
 		return [term] ~ enumSubj ~ enumPred;
 	}
 	else if (cast(shared AtomicTerm)term !is null || cast(shared Interval)term !is null) {
