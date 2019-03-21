@@ -1,8 +1,11 @@
 module Sentence;
 
+import std.conv : to;
+
 import TruthValue : TruthValue;
 import Stamp : Stamp;
 import Terms : Term;
+import TermTools;
 
 shared class Sentence {
 	shared TruthValue truth; // can be null if question
