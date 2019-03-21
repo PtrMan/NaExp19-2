@@ -138,7 +138,7 @@ class TruthValue {
 	static auto and3 = (double a, double b, double c) => a*b*c;
 	static auto or = (double a, double b) => (1.0-a)*(1.0-b);
 	static auto and = (double a, double b) => a*b;
-	static auto not (double v) => 1.0-v;
+	static auto not = (double v) => 1.0-v;
 }
 
 double calcExp(shared TruthValue tv) {
