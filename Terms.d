@@ -32,24 +32,21 @@ interface BinaryTerm : Term {
 	// TODO< methods >
 }
 
-
-/* commented because not used
 interface Indexable {
-	Term retAt(int idx);
-	int retSize();	
+	shared(Term) retAt(int idx) shared;
+	int retSize() shared;
 }
 
+/*
 interface CompoundTerm : Term, Indexable {
 }
  */
 
-/* commented because not used
 interface SetTerm : Term, Indexable {
 	// '['
 	// '{'
-	char retSetType();
+	char retSetType() shared;
 }
- */
 
 ulong calcHash(string str) {	
 	ulong hash = 17;
@@ -173,4 +170,38 @@ class Variable : VariableTerm {
 
 	protected immutable string protectedName;
 	protected immutable string protectedType;
+}
+
+class Set : SetTerm {
+	this(char type, shared(Term)[] content) {
+		this.type = type;
+		this.content = content;
+	}
+
+	public char retType() shared {return 'S';}
+
+    public ulong retHash() shared {
+    	ulong hash;
+    	foreach (iContent;content) {
+    		hash ^= iContent.retHash();
+    		hash <<= 2;
+    		hash += 3;
+    	}
+
+        return hash;
+    }
+
+	public shared(Term) retAt(int idx) shared {
+		return content[idx];
+	}
+	public int retSize() shared {
+		return cast(int)content.length;
+	}
+
+	public char retSetType() shared {
+		return type;
+	}
+
+	protected shared(Term)[] content;
+	protected char type;
 }
