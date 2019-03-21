@@ -17,6 +17,7 @@ interface Term {
 	// b : binary with copula
 	// S : set
 	// i : interval
+	// v : variable
 	char retType() shared;
 
 	// same terms have to have the same hash
@@ -143,4 +144,33 @@ class Binary : BinaryTerm {
 	public immutable ubyte[20] hash1;
 
 	private immutable ulong cachedHash;
+}
+
+interface Variable : Term {
+	public @property string name() shared;
+	public @property string type() shared;
+}
+
+class VariableImpl : Variable {
+	public this(string name, string type) {
+		this.protectedName = name;
+		this.protectedType = type;
+	}
+
+	public @property string name() shared {
+		return protectedName;
+	}
+
+	public @property string type() shared {
+		return protectedType;
+	}
+
+	public char retType() shared {return 'v';}
+
+    public ulong retHash() shared {
+        return calcHash(name) ^ calcHash(type);
+    }
+
+	protected immutable string protectedName;
+	protected immutable string protectedType;
 }
