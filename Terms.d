@@ -146,12 +146,12 @@ class Binary : BinaryTerm {
 	private immutable ulong cachedHash;
 }
 
-interface Variable : Term {
+interface VariableTerm : Term {
 	public @property string name() shared;
 	public @property string type() shared;
 }
 
-class VariableImpl : Variable {
+class Variable : VariableTerm {
 	public this(string name, string type) {
 		this.protectedName = name;
 		this.protectedType = type;
