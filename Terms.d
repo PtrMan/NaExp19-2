@@ -18,6 +18,7 @@ interface Term {
 	// S : set
 	// i : interval
 	// v : variable
+	// c : compound
 	char retType() shared;
 
 	// same terms have to have the same hash
@@ -146,6 +147,47 @@ class Binary : BinaryTerm {
 interface VariableTerm : Term {
 	public @property string name() shared;
 	public @property string type() shared;
+}
+
+interface CompoundTerm : Term, Indexable {
+	// * for product
+	// / for image
+	char retCompoundType() shared;
+}
+
+class Compound : CompoundTerm {
+	this(char type, shared(Term)[] content) {
+		this.protectedCompoundType = type;
+		this.content = content;
+	}
+
+	public shared(Term) retAt(int idx) shared {
+		return content[idx];
+	}
+	public int retSize() shared {
+		return cast(int)content.length;
+	}
+
+	public ulong retHash() shared {
+        string hashString = "" ~ protectedCompoundType;
+        foreach(iContent;content) {
+        	hashString ~= "_" ~ to!string(iContent.retHash());
+        }
+
+        ubyte[20] hash0 = sha1Of(hashString);
+        ubyte[20] hash1 = sha1Of("1" ~ hashString);
+
+		ulong hash = *(cast(ulong*)&hash0);
+
+		//cachedHash = hash;
+		return hash;
+    }
+    public char retType() shared {return 'c';}
+
+    public char retCompoundType() shared {return protectedCompoundType;}
+
+    protected char protectedCompoundType;
+	protected shared(Term)[] content;
 }
 
 class Variable : VariableTerm {
