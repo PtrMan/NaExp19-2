@@ -438,7 +438,7 @@ def genEmit(premiseA, premiseB, preconditions, conclusion, truthTuple, desire):
     print "    teX.fp = &derive"+str(staticFunctionCounter)+";"
     print "    te"+str(teCounter-1)+".children ~= teX;"
     print "    "
-    print "    rootTries ~= te0;"
+    print "    addToTrieRec(&rootTries, te0); //rootTries ~= te0;"
     print "}"
     print "\n"
 

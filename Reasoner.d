@@ -1080,6 +1080,35 @@ class TrieDeriver {
 	}
 }
 
+// add element to trie
+// used to build an efficient trie by the initialization of the trie
+void addToTrieRec(shared(TrieElement)[]* root, shared(TrieElement) added) {
+	if (added.type == TrieElement.EnumType.CHECKCOPULA) {
+		foreach (shared(TrieElement) iRootElement;*root) {
+			if (iRootElement.type == TrieElement.EnumType.CHECKCOPULA && iRootElement.side == added.side && iRootElement.checkedString == added.checkedString) {
+				
+				foreach (shared(TrieElement) iChildren; added.children) {
+					addToTrieRec(cast(shared(TrieElement)[]*)&iRootElement.children, iChildren);
+				}
+				return;
+			}
+		}
+	}
+	else if (added.type == TrieElement.EnumType.WALKCOMPARE) {
+		foreach (shared(TrieElement) iRootElement;*root) {
+			if (iRootElement.type == TrieElement.EnumType.WALKCOMPARE && iRootElement.pathLeft == added.pathLeft && iRootElement.pathRight == added.pathRight) {
+				
+				foreach (shared(TrieElement) iChildren; added.children) {
+					addToTrieRec(cast(shared(TrieElement)[]*)&iRootElement.children, iChildren);
+				}
+				return;
+			}
+		}
+	}
+	
+	*root ~= added;
+}
+
 class TrieElement {
 	public final shared this(EnumType type) {
 		this.type = type;
@@ -1098,7 +1127,7 @@ class TrieElement {
 	// trie element is passed to pass some additional data to it
 	public void function(shared Sentence leftSentence, shared Sentence rightSentence, Sentences resultSentences, shared TrieElement trieElement, TrieContext *trieCtx) fp;
 
-	public TrieElement[] children; // children are traversed if the check was true
+	public shared(TrieElement)[] children; // children are traversed if the check was true
 
 
 	public enum EnumType {
